@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date
 
+import pytest
+
+from src import writer as writer_module
 from src.config import Brand, Catalog, Product
 from src.topic_filter import Topic
 from src.writer import Draft, _extract_json, _post_process, build_offline, generate
@@ -50,6 +53,59 @@ def test_generate_without_key_falls_back(brand: Brand, catalog: Catalog, puffer:
     topic = Topic(title="Cold mornings", link="", source="test", score=4)
     draft = generate(topic, puffer, brand, catalog, date(2026, 11, 23), api_key="")
     assert draft.source == "offline"
+
+
+class _Response:
+    def __init__(self, status: int, text: str):
+        self.status_code = status
+        self.text = text
+
+    def json(self):
+        return {}
+
+
+class _Session:
+    def __init__(self, status: int, text: str):
+        self.status = status
+        self.text = text
+
+    def post(self, *args, **kwargs):
+        return _Response(self.status, self.text)
+
+
+def test_transient_gemini_failure_falls_back_to_templates(
+    brand: Brand, catalog: Catalog, puffer: Product, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(writer_module.time, "sleep", lambda seconds: None)
+    topic = Topic(title="Cold mornings", link="", source="test", score=4)
+    draft = generate(
+        topic,
+        puffer,
+        brand,
+        catalog,
+        date(2026, 11, 23),
+        api_key="key",
+        session=_Session(503, "high demand"),  # type: ignore[arg-type]
+    )
+    assert draft.source == "offline-fallback"
+    assert puffer.name in draft.caption
+
+
+def test_retired_model_is_a_hard_error(
+    brand: Brand, catalog: Catalog, puffer: Product, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(writer_module.time, "sleep", lambda seconds: None)
+    topic = Topic(title="Cold mornings", link="", source="test", score=4)
+    with pytest.raises(writer_module.WriterError):
+        generate(
+            topic,
+            puffer,
+            brand,
+            catalog,
+            date(2026, 11, 23),
+            api_key="key",
+            session=_Session(404, "model retired"),  # type: ignore[arg-type]
+        )
 
 
 def test_extract_json_handles_code_fences() -> None:

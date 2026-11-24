@@ -19,7 +19,7 @@ import logging
 import random
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any, Sequence
 
@@ -31,7 +31,8 @@ from .topic_filter import Topic
 LOG = logging.getLogger("khuje.writer")
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_MODEL = "gemini-2.5-flash"
+# Checked 2026-11-24: 2.5 Flash is closed to new users; 3.8 Flash is current.
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 HOOKS: dict[str, tuple[str, ...]] = {
     "hoodie": ("Hoodie weather.", "Easy layer, all day.", "Cold mornings, covered."),
@@ -99,6 +100,10 @@ DEFAULT_LINES = (
 
 class WriterError(RuntimeError):
     pass
+
+
+class WriterUnavailable(WriterError):
+    """Gemini could not be reached (5xx, timeout). Safe to use templates instead."""
 
 
 @dataclass(frozen=True)
@@ -380,11 +385,11 @@ def _call_gemini(
     session: requests.Session,
     base_url: str,
     timeout: int,
-    attempts: int = 3,
+    attempts: int = 4,
 ) -> str:
     url = f"{base_url.rstrip('/')}/models/{model}:generateContent"
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
-    delays = (2, 5, 10)
+    delays = (2, 5, 10, 20)
 
     last_error = "unknown error"
     for attempt in range(attempts):
@@ -411,7 +416,7 @@ def _call_gemini(
         if attempt < attempts - 1:
             time.sleep(delays[min(attempt, len(delays) - 1)])
 
-    raise WriterError(f"Gemini unavailable after {attempts} attempts: {last_error}")
+    raise WriterUnavailable(f"Gemini unavailable after {attempts} attempts: {last_error}")
 
 
 def generate(
@@ -448,7 +453,12 @@ def generate(
             "responseSchema": _SCHEMA,
         },
     }
-    raw = _call_gemini(payload, api_key, model, session, base_url, timeout)
+    try:
+        raw = _call_gemini(payload, api_key, model, session, base_url, timeout)
+    except WriterUnavailable as exc:
+        log.warning("writer: Gemini unavailable, using templates: %s", exc)
+        fallback = build_offline(topic, product, brand, day)
+        return replace(fallback, source="offline-fallback")
     data = _extract_json(raw)
     draft = _post_process(data, topic, product, brand)
     log.info("writer: gemini draft ready (%d chars, %d tags)", len(draft.caption), len(draft.hashtags))

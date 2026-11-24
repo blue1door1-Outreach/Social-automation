@@ -343,6 +343,8 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 )
             except writer.WriterError as exc:
                 errors.append(f"writer: {exc}")
+            if draft is not None and draft.source == "offline-fallback":
+                warnings.append("writer: Gemini unavailable, used offline templates")
 
     if draft is not None and not errors:
         issues = validator.validate_draft(draft, brand, catalog)

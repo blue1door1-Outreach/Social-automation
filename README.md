@@ -255,7 +255,7 @@ One-time repository setup:
    | Variable | `BUFFER_CHANNEL_IG` | Instagram channel id |
    | Variable | `PUBLIC_IMAGE_BASE_URL` | `https://<owner>.github.io/<repo>/posts` |
    | Variable | `ENABLE_QUEUEING` | leave unset, then `true` when ready |
-   | Variable | `GEMINI_MODEL` | optional, default `gemini-2.5-flash` |
+   | Variable | `GEMINI_MODEL` | optional, default `gemini-3.8-flash` |
 
 Dispatch `queue` from `main`: the publish job pushes the image and ledger back
 to the branch it runs on. Branch protection that blocks bot pushes will break

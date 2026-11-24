@@ -1,4 +1,4 @@
-name: Daily post
+﻿name: Daily post
 
 on:
   schedule:
@@ -27,13 +27,13 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload preview
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daily-post-${{ github.run_id }}
           path: out/
@@ -85,11 +85,11 @@ jobs:
       BUFFER_CHANNEL_IG: ${{ vars.BUFFER_CHANNEL_IG }}
       PUBLIC_IMAGE_BASE_URL: ${{ vars.PUBLIC_IMAGE_BASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -117,7 +117,7 @@ jobs:
           exit $missing
 
       - name: Download the reviewed preview
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: daily-post-${{ github.run_id }}
           path: reviewed
@@ -156,13 +156,13 @@ jobs:
           fi
 
       - name: Package the Pages site
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Queue to Buffer
         run: |

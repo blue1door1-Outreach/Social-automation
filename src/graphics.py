@@ -180,6 +180,36 @@ def _mix_hex(a: str, b: str, t: float) -> str:
     return "#{:02X}{:02X}{:02X}".format(*mixed)
 
 
+# Runs inside headless Chrome before the screenshot. Chrome measures real Bengali
+# text, so this is the only place that can shrink a long headline or takeaway
+# until it clears the footer. Without it, a 60-character headline plus a long
+# takeaway could overlap the footer rule.
+_FIT_JS = """
+(function () {
+  var body = document.querySelector('.body');
+  var foot = document.querySelector('.foot');
+  var h1 = document.querySelector('.body h1');
+  var note = document.querySelector('.body .note');
+  if (!body || !foot || !h1) return;
+  var limit = foot.getBoundingClientRect().top - 26;
+  for (var guard = 0; guard < 60; guard++) {
+    if (body.getBoundingClientRect().bottom <= limit) break;
+    var hs = parseFloat(getComputedStyle(h1).fontSize);
+    if (hs > 34) { h1.style.fontSize = (hs - 3) + 'px'; continue; }
+    if (note) {
+      var ns = parseFloat(getComputedStyle(note).fontSize);
+      if (ns > 22) {
+        note.style.fontSize = (ns - 1.5) + 'px';
+        note.style.lineHeight = '1.5';
+        continue;
+      }
+    }
+    break;
+  }
+})();
+"""
+
+
 def _build_html(
     *,
     brand: Brand,
@@ -253,6 +283,7 @@ def _build_html(
     <div class="row"><div class="brand">{html_module.escape(brand.name)}</div>{cta_html}</div>
     {follow_html}
   </div>
+  <script>{_FIT_JS}</script>
 </div></body></html>"""
 
 

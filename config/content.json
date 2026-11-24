@@ -8,8 +8,17 @@
       "title": "Layer light for Dhaka winter",
       "body": "Start with a tee, add a sweatshirt, finish with a light jacket. Take off the top layer when the sun comes out.",
       "note": "Light layers beat one heavy coat here.",
-      "audience": ["men", "women"],
-      "tags": ["layering", "winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering",
+        "winter"
+      ],
+      "title_bn": "ঢাকার শীতে হালকা স্তর",
+      "body_bn": "একটি টি-শার্ট দিয়ে শুরু করুন, তার উপরে সুইটশার্ট, শেষে হালকা জ্যাকেট। রোদ উঠলে উপরের স্তরটি খুলে ফেলুন।",
+      "note_bn": "একটি ভারী কোটের চেয়ে হালকা স্তর ভালো।"
     },
     {
       "id": "three-layer-rule",
@@ -17,8 +26,17 @@
       "title": "The three-layer rule",
       "body": "Base layer, mid layer, outer layer. Each one traps a little air, and you can remove one without losing the whole outfit.",
       "note": "Three thin layers, one warm you.",
-      "audience": ["men", "women"],
-      "tags": ["layering", "winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering",
+        "winter"
+      ],
+      "title_bn": "তিন স্তরের নিয়ম",
+      "body_bn": "বেস স্তর, মাঝের স্তর, উপরের স্তর। প্রতিটি একটু বাতাস ধরে রাখে, আর একটি খুললেও পুরো পোশাক ঠিক থাকে।",
+      "note_bn": "তিনটি পাতলা স্তর, একটাই উষ্ণ আপনি।"
     },
     {
       "id": "how-to-wear-shacket",
@@ -26,8 +44,16 @@
       "title": "How to wear a shacket",
       "body": "Treat a shacket like a light jacket: over a tee, under a scarf, sleeves down on foggy mornings.",
       "note": "Shirt weight, jacket warmth.",
-      "audience": ["men", "women"],
-      "tags": ["layering"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering"
+      ],
+      "title_bn": "শ্যাকেট কীভাবে পরবেন",
+      "body_bn": "শ্যাকেটকে হালকা জ্যাকেটের মতো পরুন: টি-শার্টের উপরে, স্কার্ফের নিচে, কুয়াশার সকালে হাতা নামিয়ে।",
+      "note_bn": "শার্টের ওজন, জ্যাকেটের উষ্ণতা।"
     },
     {
       "id": "five-winter-basics",
@@ -35,8 +61,16 @@
       "title": "Five winter basics you need",
       "body": "A knit sweater, a hoodie, a light padded jacket, a scarf and warm socks. Everything else is a bonus.",
       "note": "Five pieces, endless mornings.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "শীতে দরকারি পাঁচটি জিনিস",
+      "body_bn": "একটি নিট সোয়েটার, একটি হুডি, একটি হালকা প্যাডেড জ্যাকেট, একটি স্কার্ফ আর গরম মোজা। বাকিটা বাড়তি।",
+      "note_bn": "পাঁচটি জিনিস, অনেক সহজ সকাল।"
     },
     {
       "id": "kids-school-run",
@@ -44,8 +78,16 @@
       "title": "Dress kids for the school run",
       "body": "A sweatshirt, a padded jacket and a beanie. Add gloves on foggy mornings, and keep a spare pair in the bag.",
       "note": "Warm ears, easy school run.",
-      "audience": ["kids"],
-      "tags": ["kids", "layering"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids",
+        "layering"
+      ],
+      "title_bn": "স্কুলে যাওয়ার জন্য শিশুকে সাজান",
+      "body_bn": "একটি সুইটশার্ট, একটি প্যাডেড জ্যাকেট আর একটি বিয়ানি। কুয়াশার সকালে গ্লাভস দিন, ব্যাগে একটি বাড়তি রাখুন।",
+      "note_bn": "গরম কান, সহজ স্কুল যাওয়া।"
     },
     {
       "id": "keep-knits-looking-new",
@@ -53,8 +95,16 @@
       "title": "Keep knits looking new",
       "body": "Fold sweaters instead of hanging them. Wash cold, dry flat, and they keep their shape for winters.",
       "note": "Fold, never hang.",
-      "audience": ["men", "women"],
-      "tags": ["care"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "care"
+      ],
+      "title_bn": "নিট পোশাক নতুনের মতো রাখুন",
+      "body_bn": "সোয়েটার ঝুলিয়ে না রেখে ভাঁজ করে রাখুন। ঠান্ডা পানিতে ধুয়ে ছায়ায় শুকান, তাহলে আকার ঠিক থাকে।",
+      "note_bn": "ভাঁজ করুন, ঝুলাবেন না।"
     },
     {
       "id": "wash-winter-wear",
@@ -62,8 +112,16 @@
       "title": "Wash winter wear right",
       "body": "Turn jackets inside out, close the zips, and skip the dryer. Air-dry in the shade to protect the fabric.",
       "note": "Zip up, air dry.",
-      "audience": ["men", "women"],
-      "tags": ["care"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "care"
+      ],
+      "title_bn": "শীতের পোশাক ঠিকভাবে ধুয়ে নিন",
+      "body_bn": "জ্যাকেট উল্টো করে দিন, জিপ বন্ধ করুন, ড্রায়ার এড়িয়ে চলুন। কাপড় বাঁচাতে ছায়ায় শুকান।",
+      "note_bn": "জিপ বন্ধ, ছায়ায় শুকান।"
     },
     {
       "id": "sweater-vs-sweatshirt",
@@ -71,8 +129,16 @@
       "title": "Sweater or sweatshirt?",
       "body": "A sweater is knit and dressier. A sweatshirt is soft and casual. Both work, pick by the day you have planned.",
       "note": "Knit for smart, sweat for easy.",
-      "audience": ["men", "women"],
-      "tags": ["layering"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering"
+      ],
+      "title_bn": "সোয়েটার নাকি সুইটশার্ট?",
+      "body_bn": "সোয়েটার নিট আর একটু স্মার্ট। সুইটশার্ট নরম আর ক্যাজুয়াল। দুটোই ভালো, দিন অনুযায়ী বেছে নিন।",
+      "note_bn": "স্মার্টে নিট, আরামে সুইট।"
     },
     {
       "id": "padded-vs-fleece",
@@ -80,8 +146,16 @@
       "title": "Padded or fleece?",
       "body": "Padded holds warmth for windy mornings. Fleece is lighter for indoors and short trips. Layer them when it is really cold.",
       "note": "Windy? Padded. Easy day? Fleece.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "প্যাডেড নাকি ফ্লিস?",
+      "body_bn": "বাতাসের সকালে প্যাডেড উষ্ণতা ধরে রাখে। ঘরে বা ছোট যাত্রায় ফ্লিস হালকা। খুব ঠান্ডায় দুটোই স্তরে স্তরে পরুন।",
+      "note_bn": "বাতাস? প্যাডেড। সহজ দিন? ফ্লিস।"
     },
     {
       "id": "winter-colours",
@@ -89,8 +163,16 @@
       "title": "Winter colours that work",
       "body": "Cream, camel, olive and deep brown. Pick two, add denim, and the outfit looks planned.",
       "note": "Two colours, one easy outfit.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "শীতে যেসব রং ভালো লাগে",
+      "body_bn": "ক্রিম, ক্যামেল, জলপাই আর গাঢ় বাদামি। দুটি বেছে নিন, ডেনিম যোগ করুন, তখন পোশাক সাজানো দেখায়।",
+      "note_bn": "দুটি রং, একটি সহজ পোশাক।"
     },
     {
       "id": "scarf-one-loop",
@@ -98,8 +180,16 @@
       "title": "Scarf, tied simply",
       "body": "Fold the scarf in half, loop the ends through, and pull gently. Warm neck, no fuss.",
       "note": "One loop, done.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "স্কার্ফ, সহজে বাঁধা",
+      "body_bn": "স্কার্ফ মাঝখান থেকে ভাঁজ করুন, দুই মাথা গলিয়ে দিন, তারপর আলতো করে টানুন। গরম গলা, কোনো ঝামেলা নেই।",
+      "note_bn": "এক প্যাঁচ, কাজ শেষ।"
     },
     {
       "id": "kids-mittens",
@@ -107,8 +197,15 @@
       "title": "Keep little hands warm",
       "body": "Mittens are easier than gloves for small kids. Clip them to the sleeves so they come home in pairs.",
       "note": "Clip them, do not lose them.",
-      "audience": ["kids"],
-      "tags": ["kids"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids"
+      ],
+      "title_bn": "ছোট হাত গরম রাখুন",
+      "body_bn": "ছোট শিশুর জন্য গ্লাভসের চেয়ে মিটেন সহজ। হাতায় ক্লিপ দিয়ে লাগিয়ে দিন, তাহলে জোড়া মিলেই ফিরবে।",
+      "note_bn": "ক্লিপ দিন, হারাবেন না।"
     },
     {
       "id": "foggy-commute",
@@ -116,8 +213,16 @@
       "title": "Foggy morning commute",
       "body": "Fog holds the cold. A scarf, a warm layer and a light jacket make the ride comfortable without overheating later.",
       "note": "Fog is colder than it looks.",
-      "audience": ["men", "women"],
-      "tags": ["dhaka"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "dhaka"
+      ],
+      "title_bn": "কুয়াশার সকালের যাত্রা",
+      "body_bn": "কুয়াশা ঠান্ডা ধরে রাখে। একটি স্কার্ফ, একটি গরম স্তর আর হালকা জ্যাকেটে পথ সহজ হয়, পরে গরমও লাগে না।",
+      "note_bn": "কুয়াশা দেখার চেয়ে ঠান্ডা।"
     },
     {
       "id": "indoor-chill",
@@ -125,8 +230,16 @@
       "title": "Why indoor winter feels cold",
       "body": "Concrete holds the chill. Keep a cardigan or hoodie by the desk and a light layer for the evening.",
       "note": "Indoor chill is real.",
-      "audience": ["men", "women"],
-      "tags": ["dhaka"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "dhaka"
+      ],
+      "title_bn": "ঘরে শীত কেন বেশি লাগে",
+      "body_bn": "কংক্রিট ঠান্ডা ধরে রাখে। ডেস্কের পাশে একটি কার্ডিগান বা হুডি আর সন্ধ্যার জন্য হালকা স্তর রাখুন।",
+      "note_bn": "ঘরের শীত সত্যিই লাগে।"
     },
     {
       "id": "style-varsity",
@@ -134,8 +247,16 @@
       "title": "How to style a varsity jacket",
       "body": "Keep it simple: plain tee, straight jeans, clean sneakers. Let the jacket be the loud piece.",
       "note": "One bold piece is enough.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "ভার্সিটি জ্যাকেট স্টাইল",
+      "body_bn": "সহজ রাখুন: সাদা টি-শার্ট, সোজা জিন্স, পরিষ্কার স্নিকার। জ্যাকেটটাই থাকুক চোখে পড়ার মতো।",
+      "note_bn": "একটি bold জিনিসই যথেষ্ট।"
     },
     {
       "id": "denim-that-layers",
@@ -143,8 +264,16 @@
       "title": "Denim that layers",
       "body": "A denim shirt works open over a tee, or buttoned under a jacket. Roll the cuffs once, not twice.",
       "note": "Open, buttoned, or under.",
-      "audience": ["men", "women"],
-      "tags": ["layering"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering"
+      ],
+      "title_bn": "ডেনিম দিয়ে স্তর",
+      "body_bn": "ডেনিম শার্ট টি-শার্টের উপরে খোলা, বা জ্যাকেটের নিচে বোতাম লাগিয়ে পরুন। কাফ একবার গোটান, দুইবার নয়।",
+      "note_bn": "খোলা, বোতাম, বা নিচে।"
     },
     {
       "id": "weekend-winter-list",
@@ -152,8 +281,16 @@
       "title": "Weekend winter checklist",
       "body": "Sweater, scarf, socks, lip balm, water. Keep the list by the door and cold mornings get easier.",
       "note": "Ready by the door.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "সপ্তাহান্তের শীতের তালিকা",
+      "body_bn": "সোয়েটার, স্কার্ফ, মোজা, লিপ বাম, পানি। তালিকাটি দরজার পাশে রাখুন, ঠান্ডা সকাল সহজ হয়ে যাবে।",
+      "note_bn": "দরজার পাশে প্রস্তুত।"
     },
     {
       "id": "kids-winter-set",
@@ -161,8 +298,15 @@
       "title": "A winter set, sorted",
       "body": "Matching set, one less decision. Add a beanie and closed shoes, and the morning is done.",
       "note": "One set, no arguments.",
-      "audience": ["kids"],
-      "tags": ["kids"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids"
+      ],
+      "title_bn": "শীতের সেট, গুছিয়ে",
+      "body_bn": "মিলিয়ে সেট মানে একটি সিদ্ধান্ত কম। একটি বিয়ানি আর বন্ধ জুতা যোগ করুন, সকাল শেষ।",
+      "note_bn": "এক সেট, ঝগড়া নেই।"
     },
     {
       "id": "store-sweaters",
@@ -170,8 +314,16 @@
       "title": "Store sweaters without stretching",
       "body": "Fold, stack, and keep them away from damp walls. A cotton bag keeps dust off and lets the knit breathe.",
       "note": "Fold, stack, breathe.",
-      "audience": ["men", "women"],
-      "tags": ["care"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "care"
+      ],
+      "title_bn": "সোয়েটার টেনে না রেখে গুছিয়ে রাখুন",
+      "body_bn": "ভাঁজ করুন, স্তরে রাখুন, আর স্যাঁতসেঁতে দেয়াল থেকে দূরে রাখুন। সুতির ব্যাগ ধুলো আটকায়, নিট শ্বাস নিতে পারে।",
+      "note_bn": "ভাঁজ, স্তর, শ্বাস।"
     },
     {
       "id": "turtleneck-simple",
@@ -179,8 +331,16 @@
       "title": "Turtleneck, done right",
       "body": "Keep the rest simple: straight trousers, one watch, no scarf. The neckline is the statement.",
       "note": "Let the neckline speak.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "টার্টলনেক, ঠিকভাবে",
+      "body_bn": "বাকিটা সহজ রাখুন: সোজা ট্রাউজার, একটি ঘড়ি, স্কার্ফ নয়। গলার অংশটাই মূল কথা।",
+      "note_bn": "গলাটাই বলুক।"
     },
     {
       "id": "cardigan-two-moods",
@@ -188,8 +348,16 @@
       "title": "Cardigan over everything",
       "body": "Button it for the office, leave it open over a tee on warmer afternoons. One piece, two moods.",
       "note": "Buttoned or open.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "কার্ডিগান সবকিছুর উপরে",
+      "body_bn": "অফিসের জন্য বোতাম লাগান, গরম দুপুরে টি-শার্টের উপরে খোলা রাখুন। একটাই পোশাক, দুই রকম ভাব।",
+      "note_bn": "বোতাম, নাকি খোলা।"
     },
     {
       "id": "warm-feet",
@@ -197,8 +365,16 @@
       "title": "Warm feet, warm day",
       "body": "Wool socks do more than slippers. Wear them with loafers or boots and skip the cold floor feeling.",
       "note": "Start from the feet.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "গরম পা, গরম দিন",
+      "body_bn": "উলের মোজা চটির চেয়ে বেশি কাজে দেয়। লোফার বা বুটের সাথে পরুন, ঠান্ডা মেঝের অনুভূতি এড়ান।",
+      "note_bn": "পা থেকে শুরু করুন।"
     },
     {
       "id": "kids-beanie-fit",
@@ -206,8 +382,15 @@
       "title": "Beanie fit check",
       "body": "The beanie should cover the ears but not the eyes. A folded cuff keeps it snug without squeezing.",
       "note": "Ears covered, eyes clear.",
-      "audience": ["kids"],
-      "tags": ["kids"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids"
+      ],
+      "title_bn": "বিয়ানির ফিট দেখে নিন",
+      "body_bn": "বিয়ানি কান ঢাকুক কিন্তু চোখ নয়। ভাঁজ করা কাফ চেপে না ধরেই snug রাখে।",
+      "note_bn": "কান ঢাকা, চোখ খোলা।"
     },
     {
       "id": "one-jacket-three-outfits",
@@ -215,8 +398,16 @@
       "title": "One jacket, three outfits",
       "body": "Same padded jacket: with jeans and sneakers, with trousers and boots, or over a hoodie for the school run.",
       "note": "One jacket, three ways.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "একটি জ্যাকেট, তিনটি পোশাক",
+      "body_bn": "একই প্যাডেড জ্যাকেট: জিন্স আর স্নিকারে, ট্রাউজার আর বুটে, বা স্কুলে যাওয়ার জন্য হুডির উপরে।",
+      "note_bn": "এক জ্যাকেট, তিন রকম।"
     },
     {
       "id": "office-layers",
@@ -224,8 +415,16 @@
       "title": "Layers for the office",
       "body": "Offices run cold and afternoons run warm. A cardigan and a scarf are easier than a heavy coat.",
       "note": "Desk layers, not coats.",
-      "audience": ["men", "women"],
-      "tags": ["dhaka"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "dhaka"
+      ],
+      "title_bn": "অফিসের জন্য স্তর",
+      "body_bn": "অফিস ঠান্ডা, দুপুর গরম। ভারী কোটের চেয়ে একটি কার্ডিগান আর স্কার্ফ সহজ।",
+      "note_bn": "ডেস্কে স্তর, কোট নয়।"
     },
     {
       "id": "cold-morning-check",
@@ -233,8 +432,16 @@
       "title": "Cold morning checklist",
       "body": "Phone, keys, scarf, a layer you can remove. Check once at the door and stop going back.",
       "note": "Check once, leave once.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "ঠান্ডা সকালের চেকলিস্ট",
+      "body_bn": "ফোন, চাবি, স্কার্ফ, খুলে ফেলার মতো একটি স্তর। দরজায় একবার দেখে নিন, ফিরে আসা বন্ধ করুন।",
+      "note_bn": "একবার দেখুন, একবার বেরোন।"
     },
     {
       "id": "soft-layer-under-wool",
@@ -242,8 +449,16 @@
       "title": "Soft first, wool second",
       "body": "Rough wool can irritate. Wear a soft cotton layer underneath and keep the knit for the outer layer.",
       "note": "Soft first, wool second.",
-      "audience": ["men", "women"],
-      "tags": ["care"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "care"
+      ],
+      "title_bn": "আগে নরম, পরে উল",
+      "body_bn": "খসখসে উল চুলকাতে পারে। নিচে নরম সুতির একটি স্তর পরুন, নিট রাখুন উপরের স্তরে।",
+      "note_bn": "আগে নরম, পরে উল।"
     },
     {
       "id": "hoodie-under-jacket",
@@ -251,8 +466,16 @@
       "title": "Hoodie under a jacket",
       "body": "A thin hoodie under a padded jacket adds warmth without bulk. Keep the hood out for a cleaner line.",
       "note": "Warm without the bulk.",
-      "audience": ["men", "women"],
-      "tags": ["layering"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "layering"
+      ],
+      "title_bn": "জ্যাকেটের নিচে হুডি",
+      "body_bn": "প্যাডেড জ্যাকেটের নিচে পাতলা হুডি মোটা না হয়েই উষ্ণতা বাড়ায়। পরিষ্কার লাইনের জন্য হুডটি ভিতরে রাখুন।",
+      "note_bn": "মোটা না হয়েই উষ্ণ।"
     },
     {
       "id": "kids-bag-pocket",
@@ -260,8 +483,15 @@
       "title": "Beanie and gloves, front pocket",
       "body": "Put them in the front pocket, not the bottom of the bag. They stay findable and dry.",
       "note": "Front pocket, every day.",
-      "audience": ["kids"],
-      "tags": ["kids"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids"
+      ],
+      "title_bn": "বিয়ানি আর গ্লাভস, সামনের পকেটে",
+      "body_bn": "ব্যাগের তলায় নয়, সামনের পকেটে রাখুন। এতে সহজে পাওয়া যায় আর শুকনো থাকে।",
+      "note_bn": "সামনের পকেট, প্রতিদিন।"
     },
     {
       "id": "camel-and-cream",
@@ -269,8 +499,16 @@
       "title": "Camel and cream, always works",
       "body": "Camel jacket, cream sweater, denim. Add brown shoes and the palette stays calm.",
       "note": "Camel, cream, denim.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "ক্যামেল আর ক্রিম, সবসময় ভালো",
+      "body_bn": "ক্যামেল জ্যাকেট, ক্রিম সোয়েটার, ডেনিম। বাদামি জুতা যোগ করুন, রং শান্ত থাকবে।",
+      "note_bn": "ক্যামেল, ক্রিম, ডেনিম।"
     },
     {
       "id": "socks-with-loafers",
@@ -278,8 +516,16 @@
       "title": "Socks with loafers",
       "body": "Match the sock to the trouser, not the shoe. It keeps the line long and the look intentional.",
       "note": "Match the trouser.",
-      "audience": ["men", "women"],
-      "tags": ["style"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "লোফারের সাথে মোজা",
+      "body_bn": "মোজার রং জুতার সাথে নয়, ট্রাউজারের সাথে মেলান। এতে লাইন লম্বা আর সাজানো দেখায়।",
+      "note_bn": "ট্রাউজারের সাথে মেলান।"
     },
     {
       "id": "rickshaw-layers",
@@ -287,8 +533,17 @@
       "title": "Three layers for a rickshaw ride",
       "body": "Wind cuts through. A scarf, a jacket and closed shoes make the ride warmer than a heavy coat.",
       "note": "Block the wind first.",
-      "audience": ["men", "women"],
-      "tags": ["dhaka", "layering"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "dhaka",
+        "layering"
+      ],
+      "title_bn": "রিকশায় তিন স্তর",
+      "body_bn": "বাতাস ভেতরে ঢুকে যায়। একটি স্কার্ফ, একটি জ্যাকেট আর বন্ধ জুতায় ভারী কোটের চেয়ে আরাম।",
+      "note_bn": "আগে বাতাস আটকান।"
     },
     {
       "id": "polo-under-jacket",
@@ -296,8 +551,15 @@
       "title": "Polo for winter",
       "body": "A full-sleeve polo under a jacket is an easy office layer. Keep the collar flat and skip the tie.",
       "note": "Collar flat, jacket on.",
-      "audience": ["men"],
-      "tags": ["style"]
+      "audience": [
+        "men"
+      ],
+      "tags": [
+        "style"
+      ],
+      "title_bn": "শীতে পোলো",
+      "body_bn": "ফুল-স্লিভ পোলো জ্যাকেটের নিচে অফিসের সহজ স্তর। কলার সমান রাখুন, টাই বাদ দিন।",
+      "note_bn": "কলার সমান, জ্যাকেট পরা।"
     },
     {
       "id": "damp-shoes",
@@ -305,8 +567,16 @@
       "title": "Shoes for wet winter mornings",
       "body": "Fog leaves the ground damp. Wipe shoes when you get in and let them dry away from direct heat.",
       "note": "Wipe, then air dry.",
-      "audience": ["men", "women"],
-      "tags": ["care"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "care"
+      ],
+      "title_bn": "ভেজা শীতের সকালে জুতা",
+      "body_bn": "কুয়াশায় মাটি ভেজা থাকে। ঘরে ঢুকে জুতা মুছে নিন, সরাসরি তাপ থেকে দূরে রেখে শুকান।",
+      "note_bn": "মুছুন, তারপর শুকান।"
     },
     {
       "id": "kids-thin-layers",
@@ -314,8 +584,16 @@
       "title": "Layer kids without bulk",
       "body": "Tee, sweatshirt, light jacket. They can remove one at school and still be comfortable.",
       "note": "Thin layers, easy to remove.",
-      "audience": ["kids"],
-      "tags": ["kids", "layering"]
+      "audience": [
+        "kids"
+      ],
+      "tags": [
+        "kids",
+        "layering"
+      ],
+      "title_bn": "মোটা না করেই শিশুর স্তর",
+      "body_bn": "টি-শার্ট, সুইটশার্ট, হালকা জ্যাকেট। স্কুলে একটি খুলে ফেললেও আরামে থাকবে।",
+      "note_bn": "পাতলা স্তর, সহজে খোলা।"
     },
     {
       "id": "small-winter-bag",
@@ -323,8 +601,18 @@
       "title": "Small winter bag, fewer surprises",
       "body": "Scarf, gloves, a light layer, water. Keep it by the door and cold days get simpler.",
       "note": "Small bag, warm day.",
-      "audience": ["men", "women"],
-      "tags": ["winter"]
+      "audience": [
+        "men",
+        "women"
+      ],
+      "tags": [
+        "winter"
+      ],
+      "title_bn": "ছোট শীতের ব্যাগ, কম ঝামেলা",
+      "body_bn": "স্কার্ফ, গ্লাভস, একটি হালকা স্তর, পানি। দরজার পাশে রাখুন, ঠান্ডা দিন সহজ হবে।",
+      "note_bn": "ছোট ব্যাগ, গরম দিন।"
     }
-  ]
+  ],
+  "kicker_bn": "শীতের স্টাইল নোট",
+  "follow_bn": "আরও শীতের টিপসের জন্য ফলো করুন।"
 }

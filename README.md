@@ -1,11 +1,20 @@
 # Khuje Nao - daily Facebook/Instagram automation
 
-A cautious pipeline that produces one educational winter post per day for a shop
-in Dhaka: a curated style, care or layering idea, a short caption, a branded
-1080x1350 editorial graphic, validation, then an optional Buffer queue.
+A cautious pipeline that produces one engagement-first winter post per day for a
+shop in Dhaka, in Bangla: a curated style, care or layering idea, a short Bangla
+caption, a branded 1080x1350 editorial graphic with a real photo (no people in
+it), validation, then an optional Buffer queue.
 
 **Current state: preview works with no credentials.** Publishing stays blocked
 until the brand config is verified and Buffer access is configured.
+
+## Requirements
+
+- Python 3.11+ and the packages in `requirements-dev.txt`.
+- **Headless Chrome or Edge.** Pillow on this machine cannot shape Bengali (no
+  HarfBuzz), so the Bangla graphic is drawn as HTML and screenshotted by Chrome.
+  Chrome is auto-detected; set `CHROME_PATH` to override. GitHub's `ubuntu-latest`
+  runner already ships Chrome.
 
 ## Test it locally (5 minutes, no keys)
 
@@ -39,13 +48,21 @@ python scripts/preview_week.py --days 7 --online   # try Gemini instead of templ
 Offline is the default there so output is repeatable. Each day is a normal
 preview run.
 
+Two review helpers:
+
+```powershell
+python scripts/check_ideas.py     # render + validate all 36 ideas, out/ideas/sheet.png
+python scripts/check_photos.py    # contact sheet of the photo set, out/photos_sheet.png
+```
+
 ## What it does
 
 ```
 content library (config/content.json)
    -> one idea for the day (deterministic rotation, 36 ideas)
-   -> caption (Gemini, or deterministic templates)
-   -> graphic (Pillow, 1080x1350, editorial, text only)
+   -> caption (Gemini, or deterministic templates), in Bangla
+   -> photo (assets/photos, tag-matched, always people-free)
+   -> graphic (headless Chrome HTML, 1080x1350, editorial)
    -> validation (caption rules, image decode, size, dimensions)
    -> [gate] duplicate check, public image bytes, Buffer channels
    -> queue per platform, or stop
@@ -65,10 +82,12 @@ A non-zero exit is intentional: a skipped post should be visible, not silent.
 
 | File | What goes in it |
 | --- | --- |
-| `config/brand.json` | Name, palette, tone, CTA, caption limits, hashtag pools, banned phrases, timezone (`Asia/Dhaka`), `verified` |
-| `config/content.json` | The idea library: 36 style, care, kids and Dhaka notes, each with a title, body, short takeaway, audience and tags |
+| `config/brand.json` | Name, palette, tone, CTA (English and Bangla), caption limits, hashtag pools, banned phrases, timezone (`Asia/Dhaka`), `verified` |
+| `config/content.json` | The idea library: 36 style, care, kids and Dhaka notes, each with a title, body, short takeaway, Bangla copy, audience and tags |
 | `config/products.json` | Optional reference catalogue, kept for future product posts. The daily tips do not read it |
 | `config/research.json` | Legacy research settings, kept for experiments. Not used by the daily flow |
+| `assets/photos/credits.json` | The photo set and its licences. Every image is people-free |
+| `assets/fonts/` | Noto Serif/Sans Bengali, embedded into the graphic as base64 |
 
 The writer may only use the selected idea and the brand config. It never sells
 and never states a price, discount, stock level, delivery promise, material or
@@ -81,6 +100,9 @@ availability.
 - `title` - the big graphic headline (max 60 characters)
 - `body` - the useful part, used in the caption
 - `note` - a short takeaway under the headline (max 90)
+- `title_bn`, `body_bn`, `note_bn` - the Bangla copy that actually ships. All
+  three are required together; the English fields stay as the source of truth for
+  reviewers and as a fallback
 - `audience` - `kids`, `men`, `women` (picks hashtag groups)
 - `tags` - `layering`, `care`, `dhaka`, `style`, `winter`, `kids`
 - `type` - `STYLE TIP`, `LAYERING`, `CARE`, `CHECKLIST`, `KIDS`, `DHAKA NOTE`, `COLOUR`
@@ -88,6 +110,22 @@ availability.
 Ideas rotate by date, so the same day always gets the same idea and 36 days pass
 before a repeat. Add or edit ideas freely; the loader rejects duplicate ids,
 titles over 60 characters and notes over 90.
+
+### Photos
+
+`assets/photos/` holds a small curated set of Creative Commons (CC0) and public
+domain stock photos, each recorded with its licence and source in
+`credits.json`. Two rules are absolute:
+
+- **No people, at all.** No faces, and therefore never a photo of a woman. A
+  shortlist is reviewed by eye before it is added.
+- **Relevant or nothing.** The post picks the best tag match for the idea; if no
+  photo matches, the graphic falls back to the text-only layout.
+
+Rarer tags weigh more than common ones, so a `kids` idea prefers a knit hat over
+a generic winter scene. Ties rotate by date. To refresh the set, edit
+`scripts/fetch_photos.py` and run it; to review the current set, run
+`python scripts/check_photos.py`.
 
 ### Product catalogue (optional)
 
@@ -98,8 +136,8 @@ mentioned. It is there if you later want separate product posts.
 ### Order of operations
 
 1. Preview locally with no credentials (now).
-2. Edit `config/content.json` ideas, the palette and the CTA until you like the
-   output.
+2. Edit the ideas in `config/content.json` and their Bangla copy, the palette and
+   the CTA until you like the output.
 3. Set `verified: true` in `brand.json`.
 4. Create the Buffer account, connect Facebook and Instagram, and add the API
    key. This is the point where Buffer details become necessary.
@@ -108,21 +146,28 @@ mentioned. It is there if you later want separate product posts.
 
 ### Captions, hashtags, graphics
 
-- Educational and engagement-first: a style, layering, care or Dhaka note. No
-  product pushes, no prices, no stock, no "buy now".
-- 80-320 characters, English, 5-10 hashtags. The caption ends with the CTA
-  (`Save this for later`) and a short follow line.
+- Engagement-first: a style, layering, care or Dhaka note. No product pushes, no
+  prices, no stock, no "buy now".
+- 80-320 characters, in Bangla, 5-10 hashtags. The caption ends with the Bangla
+  CTA (`পরে পড়ার জন্য সেভ করুন`) and a short follow line. Banned phrases include
+  the Bangla selling words (`কিনুন`, `ডিসকাউন্ট`, `স্টক`, ...).
 - One required tag (`#KhujeNao`) plus audience tags, winter tags and Dhaka tags.
   Pools live in `config/brand.json`; the offline writer fills roughly
   1 + 2 audience + 4 winter + 2 local, then adds filler up to the limit.
+  Hashtags stay ASCII (letters, digits, underscore) so every platform accepts
+  them; only the caption and the graphic are Bangla.
 - Instagram's limit is **2,196 UTF-16 code units**, and a line break counts as
   2. The validator measures the real payload, not `len()`.
 - The graphic uses your palette: Warm White `#FFFBF9` paper, Sand Beige
-  `#E3CAA5`, Taupe `#ADB7B3` and Deep Brown `#594E38` for text. A serif headline,
-  a type pill, a small palette signature, the brand, the CTA and the follow line.
-- Text only: no models, no stock photos, and therefore never a photo of a woman.
-  Headlines are measured and shrunk; if the text cannot fit, rendering fails
-  instead of cropping.
+  `#E3CAA5`, Taupe `#ADB7B3` and Deep Brown `#594E38` for text. A photo band on
+  top, a serif Bangla headline, a type pill, a palette signature, the brand, the
+  CTA and the follow line.
+- The graphic is rendered as HTML by headless Chrome so Bengali shapes and joins
+  correctly; both Bengali fonts are embedded as base64, so no font is needed at
+  screenshot time. A plain-ASCII, photo-free run falls back to the Pillow layout
+  so previews still work on a machine without Chrome.
+- No models: the photo never contains a person. Headlines are measured and
+  shrunk; if the text cannot fit, rendering fails instead of cropping.
 
 ## Safety gates (queue mode)
 
@@ -309,21 +354,27 @@ inside the rules, use your own hosting or Cloudinary/R2.
 
 ```
 .github/workflows/daily-post.yml   preview -> approval -> image -> queue
+assets/fonts/                      Noto Bengali fonts (embedded in the graphic)
+assets/photos/                     curated people-free photos + credits.json
 config/brand.json                  brand facts, palette, hashtag pools
-config/content.json                the 36-idea educational library
+config/content.json                the 36-idea library, with Bangla copy
 config/products.json               optional product catalogue (unused by tips)
 config/research.json               legacy research settings (unused)
 docs/posts/                        public images served by GitHub Pages
 scripts/check_buffer.py            list Buffer organizations/channels
+scripts/check_ideas.py             render + validate every idea, contact sheet
+scripts/check_photos.py            contact sheet of the photo set, for review
+scripts/fetch_photos.py            re-download the photo set (rarely run)
 scripts/preview_week.py            generate N local previews
 src/content.py                     content loader + daily rotation
+src/photos.py                      photo library and tag-matched picking
 src/main.py                        pipeline, gates, exit codes
 src/config.py                      typed config loading
 src/env_file.py                    local .env loader (shell/CI wins)
 src/research.py                    legacy RSS research (unused by tips)
 src/topic_filter.py                legacy topic filter (unused by tips)
 src/writer.py                      Gemini JSON output + offline templates
-src/graphics.py                    Pillow editorial renderer + text fitting
+src/graphics.py                    headless-Chrome renderer + Pillow fallback
 src/validator.py                   caption/image/public-URL checks
 src/buffer_client.py               Buffer GraphQL client
 src/duplicate_guard.py             post ids and retry policy
@@ -349,10 +400,13 @@ out/                               generated artifacts (gitignored)
 
 | Symptom | Fix |
 | --- | --- |
-| `no usable font found` | Add `assets/fonts/Inter-Bold.ttf` and `Inter-Regular.ttf`, or install DejaVu fonts |
+| `no usable font found` | Add fonts to `assets/fonts` (Bengali fonts ship there), or install DejaVu fonts |
+| `Bengali text needs headless Chrome` | Install Chrome/Edge or set `CHROME_PATH`; Pillow cannot shape Bengali |
+| `headless Chrome produced no screenshot` | Usually a stale or locked Chrome profile; rerun, or check `CHROME_PATH` |
 | `ZoneInfoNotFoundError` | `pip install tzdata` (already in `requirements.txt`) |
 | `no reviewed post for this date` | Run `--mode preview` first; queue mode never regenerates content |
 | `image on disk does not match post.json` | Something edited the PNG; rerun preview |
+| `photo missing for ...` | A file listed in `credits.json` is gone; run `scripts/fetch_photos.py` |
 | `public image check failed` | Pages has not deployed yet, or the URL serves different bytes |
 | `buffer: Buffer rejected the API key` | Create a new key at `https://publish.buffer.com/settings/api` |
 | `channel id ... not found` | Re-run `python scripts/check_buffer.py`; ids differ per organization |

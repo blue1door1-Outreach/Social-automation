@@ -24,11 +24,11 @@ def test_build_from_idea_uses_only_the_idea(
     idea: ContentIdea, brand: Brand, content: ContentConfig
 ) -> None:
     draft = build_from_idea(idea, brand, content, date(2026, 11, 23))
-    assert idea.title in draft.caption
-    assert idea.body in draft.caption
-    assert brand.cta_text in draft.caption
-    assert idea.note == draft.image_subline
-    assert draft.image_headline == idea.title
+    assert idea.display_title in draft.caption
+    assert idea.display_body in draft.caption
+    assert brand.cta_text_bn in draft.caption
+    assert idea.display_note == draft.image_subline
+    assert draft.image_headline == idea.display_title
     assert draft.product_ids == ()
     assert brand.required_hashtags[0] in draft.hashtags
     assert 5 <= len(draft.hashtags) <= brand.caption.max_hashtags
@@ -77,7 +77,7 @@ def test_post_process_falls_back_to_idea_copy(
         "product_ids": [],
     }
     draft = _post_process(data, idea, brand)
-    assert draft.image_headline == idea.title
+    assert draft.image_headline == idea.display_title
     assert len(draft.image_subline) <= 90
 
 
@@ -132,7 +132,7 @@ def test_transient_gemini_failure_falls_back_to_templates(
         session=_Session(503, "high demand"),  # type: ignore[arg-type]
     )
     assert draft.source == "offline-fallback"
-    assert idea.title in draft.caption
+    assert idea.display_title in draft.caption
 
 
 def test_retired_model_is_a_hard_error(

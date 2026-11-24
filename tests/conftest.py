@@ -38,7 +38,7 @@ def brand() -> Brand:
         description="An online shop sharing winter notes.",
         audience="Adults in Bangladesh",
         location="Dhaka, Bangladesh",
-        language="en",
+        language="bn",
         timezone="Asia/Dhaka",
         publish_time_local="10:00",
         verified=False,
@@ -50,7 +50,7 @@ def brand() -> Brand:
         price_policy="never",
         stock_policy="never",
         required_hashtags=("#KhujeNao",),
-        banned_phrases=("discount", "sale", "% off", "buy now"),
+        banned_phrases=("discount", "sale", "% off", "buy now", "কিনুন", "ডিসকাউন্ট", "স্টক"),
         notes=(),
         hashtag_pools={
             "local": ("#Dhaka", "#Bangladesh", "#DhakaFashion"),
@@ -66,6 +66,8 @@ def brand() -> Brand:
             "men": ("#MensFashion", "#MensStyle", "#MensWinterWear"),
             "women": ("#WomensFashion", "#WomensStyle", "#WomensWinterWear"),
         },
+        cta_text_bn="পরে পড়ার জন্য সেভ করুন",
+        location_bn="ঢাকা",
     )
 
 
@@ -138,6 +140,9 @@ def idea() -> ContentIdea:
         note="Light layers beat one heavy coat here.",
         audience=("men", "women"),
         tags=("layering",),
+        title_bn="ঢাকার শীতে হালকা স্তর",
+        body_bn="একটি টি-শার্ট দিয়ে শুরু করুন, তার উপরে সুইটশার্ট, শেষে হালকা জ্যাকেট।",
+        note_bn="একটি ভারী কোটের চেয়ে হালকা স্তর ভালো।",
     )
 
 
@@ -147,4 +152,6 @@ def content(idea: ContentIdea) -> ContentConfig:
         kicker="WINTER STYLE NOTES",
         follow="Follow for more winter tips.",
         ideas=(idea,),
+        kicker_bn="শীতের স্টাইল নোট",
+        follow_bn="আরও শীতের টিপসের জন্য ফলো করুন।",
     )

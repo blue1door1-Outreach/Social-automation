@@ -4,7 +4,9 @@
   "description": "An online shop in Bangladesh sharing winter styling, layering and care notes for kids, men and women.",
   "audience": "Kids (boys and girls), men and women in Bangladesh",
   "location": "Dhaka, Bangladesh",
-  "language": "en",
+  "location_bn": "ঢাকা",
+  "language": "bn",
+  "secondary_language": "en",
   "timezone": "Asia/Dhaka",
   "publish_time_local": "10:00",
   "verified": false,
@@ -20,6 +22,7 @@
   "tone": "warm, useful, plain-spoken",
   "cta": {
     "text": "Save this for later",
+    "bn": "পরে পড়ার জন্য সেভ করুন",
     "url": ""
   },
   "caption": {
@@ -108,13 +111,23 @@
     "limited time",
     "hurry",
     "last chance",
-    "click the link"
+    "click the link",
+    "কিনুন",
+    "অর্ডার করুন",
+    "ডিসকাউন্ট",
+    "বিক্রি",
+    "বিক্রয়",
+    "টাকা",
+    "স্টক",
+    "লিমিটেড স্টক",
+    "শেষ হচ্ছে",
+    "এখনই কিনুন"
   ],
   "notes": [
     "This account posts winter tips and styling ideas, not product ads.",
     "Only facts from config/ may appear in a post. Never invent prices, stock, delivery promises, or product features.",
-    "News headlines are inspiration only. Never present a headline as a product fact.",
-    "The graphic is text-only: no people, and never a photo of a woman.",
+    "The graphic uses only prepared stock photos with no people in them: no faces, and therefore never a photo of a woman.",
+    "Every photo must keep its licence details in assets/photos/credits.json.",
     "Set verified=true only after a human has checked every field."
   ]
 }

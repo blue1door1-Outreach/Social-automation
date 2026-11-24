@@ -29,10 +29,10 @@ from typing import Any, Sequence
 
 import requests
 
-from . import graphics, report, research, validator, writer
+from . import graphics, photos, report, research, validator, writer
 from .buffer_client import BufferClient, BufferError, BufferUncertain, verify_channels
 from .config import Brand, ConfigError, load_all
-from .content import ContentIdea, load_content, pick_idea
+from .content import ContentIdea, load_content, pick_idea, type_label_bn
 from .duplicate_guard import decide, make_post_id
 from .env_file import load_env_file
 from .redact import collect_secrets, set_secrets, setup_logging
@@ -282,6 +282,7 @@ def _next_steps(status: str, mode: str, out_dir: Path) -> list[str]:
 def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     brand, catalog, _ = load_all(ROOT / args.config)
     content_config = load_content(ROOT / args.config / "content.json")
+    photo_library = photos.load_photos()
     day = _resolve_day(args, brand)
     out_dir = (ROOT / args.out / day.isoformat()).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -296,6 +297,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     post: dict[str, Any] | None = None
     topic: Topic | None = None
     idea: ContentIdea | None = None
+    photo: photos.Photo | None = None
     draft: writer.Draft | None = None
     image_meta: graphics.ImageMeta | None = None
     image_url = ""
@@ -311,6 +313,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
 
     if draft is None and not gates and args.mode == "preview":
         idea = pick_idea(content_config, day)
+        photo = photos.pick_photo(photo_library, idea.tags, idea.audience, day)
         topic = Topic(
             title=idea.title,
             link="",
@@ -347,9 +350,12 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 brand=brand,
                 headline=draft.image_headline,
                 subline=draft.image_subline,
-                kicker=content_config.kicker,
-                label=idea.type if idea else "",
-                follow=content_config.follow,
+                kicker=content_config.display_kicker,
+                label=type_label_bn(idea.type) if idea else "",
+                follow=content_config.display_follow,
+                photo=photo.path if photo else None,
+                cta=brand.cta_text_bn or brand.cta_text,
+                place=brand.location_bn or brand.location.split(",")[0].strip(),
             )
         except graphics.GraphicsError as exc:
             errors.append(f"graphics: {exc}")
@@ -396,6 +402,17 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 "bytes": image_meta.bytes,
                 "sha256": image_meta.sha256,
             },
+            "photo": (
+                {
+                    "id": photo.id,
+                    "file": photo.file,
+                    "credit": photo.credit(),
+                    "source": photo.source,
+                    "license": photo.license,
+                }
+                if photo
+                else None
+            ),
             "image_url": image_url,
             "targets": {"facebook": {"status": "not_attempted"}, "instagram": {"status": "not_attempted"}},
         }
@@ -520,6 +537,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
         "topic": post["topic"] if post else None,
         "draft": post["draft"] if post else None,
         "image": post["image"] if post else None,
+        "photo": post.get("photo") if post else None,
         "image_url": image_url,
         "gates": gates,
         "warnings": warnings,

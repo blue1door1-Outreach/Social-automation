@@ -30,6 +30,21 @@ class ContentIdea:
     note: str
     audience: tuple[str, ...]
     tags: tuple[str, ...]
+    title_bn: str = ""
+    body_bn: str = ""
+    note_bn: str = ""
+
+    @property
+    def display_title(self) -> str:
+        return self.title_bn or self.title
+
+    @property
+    def display_body(self) -> str:
+        return self.body_bn or self.body
+
+    @property
+    def display_note(self) -> str:
+        return self.note_bn or self.note
 
 
 @dataclass(frozen=True)
@@ -37,12 +52,39 @@ class ContentConfig:
     kicker: str
     follow: str
     ideas: tuple[ContentIdea, ...]
+    kicker_bn: str = ""
+    follow_bn: str = ""
 
     def by_id(self, idea_id: str) -> ContentIdea | None:
         for idea in self.ideas:
             if idea.id == idea_id:
                 return idea
         return None
+
+    @property
+    def display_kicker(self) -> str:
+        return self.kicker_bn or self.kicker
+
+    @property
+    def display_follow(self) -> str:
+        return self.follow_bn or self.follow
+
+
+TYPE_LABELS_BN = {
+    "STYLE TIP": "স্টাইল টিপ",
+    "LAYERING": "স্তরে স্তরে",
+    "CARE": "পোশাকের যত্ন",
+    "CHECKLIST": "চেকলিস্ট",
+    "KIDS": "শিশুদের জন্য",
+    "DHAKA NOTE": "ঢাকার নোট",
+    "COLOUR": "রঙের খেলা",
+    "COLOUR TIP": "রঙের খেলা",
+    "NOTE": "নোট",
+}
+
+
+def type_label_bn(idea_type: str) -> str:
+    return TYPE_LABELS_BN.get(idea_type.strip().upper(), idea_type.strip().title())
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -69,6 +111,8 @@ def load_content(path: Path) -> ContentConfig:
     follow = str(data.get("follow", "")).strip()
     if not kicker:
         raise ContentError(f"{where}: 'kicker' is required")
+    kicker_bn = str(data.get("kicker_bn", "")).strip()
+    follow_bn = str(data.get("follow_bn", "")).strip()
 
     raw_ideas = data.get("ideas")
     if not isinstance(raw_ideas, list) or not raw_ideas:
@@ -98,6 +142,19 @@ def load_content(path: Path) -> ContentConfig:
         if len(note) > MAX_NOTE:
             raise ContentError(f"{label}: note is longer than {MAX_NOTE} characters")
 
+        title_bn = str(item.get("title_bn", "")).strip()
+        body_bn = str(item.get("body_bn", "")).strip()
+        note_bn = str(item.get("note_bn", "")).strip()
+        bangla_fields = (title_bn, body_bn, note_bn)
+        if any(bangla_fields) and not all(bangla_fields):
+            raise ContentError(
+                f"{label}: provide all of title_bn, body_bn, note_bn (or none of them)"
+            )
+        if title_bn and len(title_bn) > MAX_TITLE:
+            raise ContentError(f"{label}: title_bn is longer than {MAX_TITLE} characters")
+        if note_bn and len(note_bn) > MAX_NOTE:
+            raise ContentError(f"{label}: note_bn is longer than {MAX_NOTE} characters")
+
         audience_raw = item.get("audience") or []
         tags_raw = item.get("tags") or []
         if not isinstance(audience_raw, list) or not isinstance(tags_raw, list):
@@ -112,10 +169,15 @@ def load_content(path: Path) -> ContentConfig:
                 note=note,
                 audience=tuple(str(value).strip().lower() for value in audience_raw if str(value).strip()),
                 tags=tuple(str(value).strip().lower() for value in tags_raw if str(value).strip()),
+                title_bn=title_bn,
+                body_bn=body_bn,
+                note_bn=note_bn,
             )
         )
 
-    return ContentConfig(kicker=kicker, follow=follow, ideas=tuple(ideas))
+    return ContentConfig(
+        kicker=kicker, follow=follow, ideas=tuple(ideas), kicker_bn=kicker_bn, follow_bn=follow_bn
+    )
 
 
 def pick_idea(config: ContentConfig, day: date) -> ContentIdea:

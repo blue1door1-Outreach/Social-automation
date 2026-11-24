@@ -78,6 +78,13 @@ def build(context: dict[str, Any]) -> str:
             f"- {image['width']}x{image['height']} PNG, {image['bytes'] / 1024:.0f} KB, "
             f"sha256 `{image['sha256'][:16]}`"
         )
+        photo = context.get("photo")
+        if photo:
+            lines.append(f"- Photo: {_cell(photo.get('credit'))}")
+            if photo.get("source"):
+                lines.append(f"- Photo source: {_cell(photo['source'])}")
+        else:
+            lines.append("- Photo: none (text-only layout)")
         if context.get("image_url"):
             lines.append(f"- Public URL: {_cell(context['image_url'])}")
     else:

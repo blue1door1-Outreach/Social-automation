@@ -47,7 +47,9 @@ PRICE_RE = re.compile(
     re.IGNORECASE,
 )
 STOCK_RE = re.compile(
-    r"\b(?:in stock|out of stock|sold out|limited stock|pre-?order|restock(?:ed)?)\b",
+    r"\b(?:in stock|out of stock|sold out|limited stock|pre-?order|restock(?:ed)?)\b"
+    r"|স্টক"
+    r"|স্টকে",
     re.IGNORECASE,
 )
 HASHTAG_RE = re.compile(r"^#[A-Za-z0-9_]+$")
@@ -79,7 +81,11 @@ def _contains_phrase(text: str, phrase: str) -> bool:
 
 
 def _sentences(text: str) -> list[str]:
-    return [part.strip().lower() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
+    return [
+        part.strip().lower()
+        for part in re.split(r"(?<=[.!?।])\s+", text)
+        if part.strip()
+    ]
 
 
 def validate_draft(draft: Draft, brand: Brand, catalog: Catalog) -> list[Issue]:
@@ -158,7 +164,8 @@ def validate_draft(draft: Draft, brand: Brand, catalog: Catalog) -> list[Issue]:
     if len(sentences) != len(set(sentences)):
         issues.append(Issue("repetition", "error", "caption repeats a sentence"))
 
-    if brand.cta_text and brand.cta_text.lower() not in caption.lower():
+    ctas = [text for text in (brand.cta_text, brand.cta_text_bn) if text]
+    if ctas and not any(text.lower() in caption.lower() for text in ctas):
         issues.append(Issue("cta_missing", "warning", "caption does not include the configured CTA"))
 
     if draft.product_ids:

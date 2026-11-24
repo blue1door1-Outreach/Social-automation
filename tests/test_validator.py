@@ -109,8 +109,10 @@ def test_missing_cta_is_only_a_warning(
     brand: Brand, catalog: Catalog, content: ContentConfig, idea: ContentIdea
 ) -> None:
     base = base_draft(brand, content, idea)
-    draft = replace(base, caption=base.caption.replace(brand.cta_text, "See the page."))
-    issues = validate_draft(draft, brand, catalog)
+    caption = base.caption
+    for cta in (brand.cta_text_bn, brand.cta_text):
+        caption = caption.replace(cta, "দেখে নিন।")
+    issues = validate_draft(replace(base, caption=caption), brand, catalog)
     assert "cta_missing" in codes(issues, "warning")
     assert "cta_missing" not in codes(issues, "error")
 

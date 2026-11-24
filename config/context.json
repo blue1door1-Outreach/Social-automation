@@ -1,0 +1,94 @@
+{
+  "location": {
+    "name": "Dhaka",
+    "name_bn": "ঢাকা",
+    "latitude": 23.8103,
+    "longitude": 90.4125
+  },
+  "publish_hour_local": 10,
+  "recency_days": 14,
+  "seasons": {
+    "winter": { "months": [11, 12, 1, 2], "note_bn": "শীত" },
+    "hemanta": { "months": [10, 3], "note_bn": "হেমন্ত" },
+    "warm": { "months": [4, 5, 6, 7, 8, 9], "note_bn": "গরম" }
+  },
+  "trends": {
+    "enabled": true,
+    "max": 8,
+    "queries": [
+      "winter Dhaka weather",
+      "cold wave Bangladesh",
+      "winter fashion Dhaka",
+      "kids winter clothes Bangladesh"
+    ],
+    "feeds": ["https://trends.google.com/trending/rss?geo=BD"],
+    "allow_keywords": [
+      "winter", "cold", "chill", "fog", "foggy", "mist", "dew", "weather",
+      "jacket", "hoodie", "sweatshirt", "sweater", "cardigan", "turtleneck",
+      "denim", "scarf", "muffler", "shawl", "beanie", "gloves", "mittens",
+      "socks", "thermal", "layering", "outfit", "fashion", "style", "comfort",
+      "tea", "blanket", "shop", "clothing", "shopping", "school"
+    ],
+    "deny_keywords": [
+      "politics", "political", "election", "vote", "party", "government",
+      "minister", "protest", "strike", "hartal", "blockade", "arrest", "court",
+      "war", "attack", "bomb", "militant", "terror", "killed", "dead", "death",
+      "died", "murder", "suicide", "rape", "harass", "accident", "crash",
+      "fire", "cyclone", "flood", "earthquake", "dengue", "hospital", "virus",
+      "religion", "religious", "islam", "hindu", "muslim", "christian",
+      "mosque", "temple", "church", "prayer", "ramadan", "eid", "puja",
+      "music", "song", "singer", "concert", "band", "album", "lyrics",
+      "film", "movie", "cinema", "actor", "actress", "drama", "serial",
+      "gossip", "celebrity", "star", "netflix", "tiktok trend",
+      "alcohol", "beer", "wine", "bar", "casino", "lottery", "betting",
+      "gambling", "dating", "girlfriend", "boyfriend", "romance",
+      "exam", "result", "admission", "salary", "inflation", "price hike",
+      "fuel", "stock market", "cricket", "football", "match", "team"
+    ]
+  },
+  "photos": {
+    "min_edge": 1000,
+    "min_short_edge": 560,
+    "max_downloads": 12,
+    "chips": ["#FFFBF9", "#E3CAA5", "#ADB7B3", "#594E38"],
+    "people_words": [
+      "people", "person", "man", "men", "woman", "women", "girl", "boy",
+      "child", "children", "kid", "kids", "baby", "model", "face", "portrait",
+      "human", "crowd", "family", "hand", "hands", "smile", "selfie", "couple"
+    ],
+    "artefact_words": [
+      "poster", "lobby card", "illustration", "drawing", "painting", "engraving",
+      "etching", "sketch", "cartoon", "caricature", "stamp", "coin", "banknote",
+      "map", "manuscript", "newspaper", "magazine", "advertisement", "logo",
+      "sculpture", "plate", "lithograph", "print", "diagram", "chart"
+    ],
+    "concept_words": {
+      "scarf": ["scarf", "scarves", "muffler", "shawl", "stole", "wool", "knit"],
+      "knit": ["sweater", "sweaters", "jumper", "pullover", "cardigan", "knit", "knitted", "wool", "knitwear"],
+      "jacket": ["jacket", "coat", "coats", "parka", "padded", "quilted", "outerwear", "anorak"],
+      "denim": ["denim", "jeans", "jean", "jacket", "shirt", "fabric", "textile", "corduroy"],
+      "hoodie": ["hoodie", "hoodies", "sweatshirt", "hood", "jumper", "sweater"],
+      "kids": ["hat", "beanie", "bonnet", "mitten", "mittens", "glove", "gloves", "booties", "knit", "wool", "cardigan"],
+      "footwear": ["sock", "socks", "boot", "boots", "shoe", "shoes", "slipper", "slippers", "footwear", "wool"],
+      "wardrobe": ["folded", "clothes", "clothing", "wardrobe", "closet", "hanger", "hangers", "storage", "stack", "drawers", "shelf"],
+      "care": ["yarn", "wool", "knit", "knitted", "laundry", "washing", "fabric", "texture", "thread", "ball"],
+      "colour": ["plaid", "tartan", "check", "checks", "textile", "fabric", "blanket", "pattern", "wool", "tweed"],
+      "weather": ["fog", "mist", "misty", "rain", "rainy", "morning", "sky", "tree", "trees", "window", "street", "road", "city", "field"],
+      "comfort": ["tea", "cup", "mug", "blanket", "wool", "warm", "coffee", "drink", "kettle", "lantern"]
+    },
+    "queries": {
+      "scarf": ["wool scarf still life", "knitted scarf folded", "muffler knit texture"],
+      "knit": ["folded sweater stack", "knitted cardigan close up", "wool sweater flat lay"],
+      "jacket": ["padded jacket hanging", "winter coat on hanger", "quilted jacket detail"],
+      "denim": ["denim jacket flat lay", "denim fabric close up", "denim shirt folded"],
+      "hoodie": ["hoodie flat lay", "sweatshirt folded fabric", "grey hoodie texture"],
+      "kids": ["knitted baby hat", "knitted mittens wool", "small winter clothes flat lay"],
+      "footwear": ["wool socks knitted", "winter boots pair", "knitted slippers wool"],
+      "wardrobe": ["folded clothes stack", "wooden hangers clothes rail", "clothes storage basket"],
+      "care": ["wool yarn ball", "knitted fabric texture macro", "laundry wool care"],
+      "colour": ["plaid woollen fabric", "camel beige knit textile", "tartan pattern cloth"],
+      "weather": ["foggy morning street", "misty winter morning trees", "rain drops window"],
+      "comfort": ["cup of tea warm", "hot drink on wooden table", "wool blanket texture"]
+    }
+  }
+}

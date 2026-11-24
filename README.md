@@ -1,9 +1,11 @@
 # Khuje Nao - daily Facebook/Instagram automation
 
 A cautious pipeline that produces one engagement-first winter post per day for a
-shop in Dhaka, in Bangla: a curated style, care or layering idea, a short Bangla
-caption, a branded 1080x1350 editorial graphic with a real photo (no people in
-it), validation, then an optional Buffer queue.
+shop in Dhaka, in Bangla. Each run reads the situation first - the weather at
+10:00, the season, and a few clean, niche trend signals - picks the idea that
+fits that moment, finds and analyses a relevant photo at run time, writes the
+caption with a hook aimed at how people feel right then, validates everything,
+and only then offers it for an approval-gated Buffer queue.
 
 **Current state: preview works with no credentials.** Publishing stays blocked
 until the brand config is verified and Buffer access is configured.
@@ -15,6 +17,8 @@ until the brand config is verified and Buffer access is configured.
   HarfBuzz), so the Bangla graphic is drawn as HTML and screenshotted by Chrome.
   Chrome is auto-detected; set `CHROME_PATH` to override. GitHub's `ubuntu-latest`
   runner already ships Chrome.
+- Network access for the live signals (Open-Meteo weather, niche RSS, Openverse
+  photos). `--offline` runs without any of it.
 
 ## Test it locally (5 minutes, no keys)
 
@@ -51,18 +55,19 @@ preview run.
 Two review helpers:
 
 ```powershell
-python scripts/check_ideas.py     # render + validate all 36 ideas, out/ideas/sheet.png
-python scripts/check_photos.py    # contact sheet of the photo set, out/photos_sheet.png
+python scripts/check_ideas.py            # all 36 ideas, offline, out/ideas/sheet.png
+python scripts/check_ideas.py --online   # with live weather, trends and photos
 ```
 
 ## What it does
 
 ```
-content library (config/content.json)
-   -> one idea for the day (deterministic rotation, 36 ideas)
-   -> caption (Gemini, or deterministic templates), in Bangla
-   -> photo (assets/photos, tag-matched, always people-free)
-   -> graphic (headless Chrome HTML, 1080x1350, editorial)
+config/context.json + live signals
+   -> situation: weather at 10:00 Dhaka, season, clean trend moods
+   -> pick the idea that fits that moment (weather + season + small trend tint)
+   -> fetch + analyse photos at run time: on-concept, clean, no people, palette-aware
+   -> caption in Bangla: hook -> short story -> takeaway -> CTA
+   -> graphic (headless Chrome HTML, 1080x1350, editorial + photo band)
    -> validation (caption rules, image decode, size, dimensions)
    -> [gate] duplicate check, public image bytes, Buffer channels
    -> queue per platform, or stop
@@ -83,49 +88,70 @@ A non-zero exit is intentional: a skipped post should be visible, not silent.
 | File | What goes in it |
 | --- | --- |
 | `config/brand.json` | Name, palette, tone, CTA (English and Bangla), caption limits, hashtag pools, banned phrases, timezone (`Asia/Dhaka`), `verified` |
-| `config/content.json` | The idea library: 36 style, care, kids and Dhaka notes, each with a title, body, short takeaway, Bangla copy, audience and tags |
+| `config/content.json` | The idea library: 36 Bangla notes, each with a title, body, takeaway, concept, seasons, weather tags, audience and tags |
+| `config/context.json` | Location, season windows, trend allow/deny keywords, photo queries, concept words, palette checks |
 | `config/products.json` | Optional reference catalogue, kept for future product posts. The daily tips do not read it |
-| `config/research.json` | Legacy research settings, kept for experiments. Not used by the daily flow |
-| `assets/photos/credits.json` | The photo set and its licences. Every image is people-free |
+| `config/research.json` | Legacy research settings (the trend reader uses its own queries) |
 | `assets/fonts/` | Noto Serif/Sans Bengali, embedded into the graphic as base64 |
 
-The writer may only use the selected idea and the brand config. It never sells
-and never states a price, discount, stock level, delivery promise, material or
+The writer may only use the selected idea and the situation. It never sells and
+never states a price, discount, stock level, delivery promise, material or
 availability.
+
+### Situation (weather, season, trends)
+
+Built fresh on every preview by `src/idea.py`:
+
+- **Weather** - Open-Meteo forecast for Dhaka at 10:00 on the post date (free,
+  no key). Turns into tags like `fog`, `cold`, `rain`, `sunny`, `humid`.
+- **Season** - winter (Nov-Feb), hemanta (Oct, Mar) or warm, from
+  `config/context.json`.
+- **Trends** - Google News RSS plus Google's Bangladesh trending-searches feed,
+  filtered hard: anything political, religious, tragic, musical, film or
+  gambling is dropped. Survivors only *tint* the mood and are never stated as
+  facts in a caption.
+
+The idea that best matches all three wins; if every signal fails the run still
+publishes from the season-matched library. The report shows the brief and the
+reason, so a reviewer can judge it.
 
 ### Content library
 
 `config/content.json` is the source of every post. Each idea has:
 
-- `title` - the big graphic headline (max 60 characters)
-- `body` - the useful part, used in the caption
-- `note` - a short takeaway under the headline (max 90)
-- `title_bn`, `body_bn`, `note_bn` - the Bangla copy that actually ships. All
-  three are required together; the English fields stay as the source of truth for
-  reviewers and as a fallback
+- `title`, `body`, `note` - the English source of truth for reviewers
+- `title_bn`, `body_bn`, `note_bn` - the Bangla that actually ships
+- `hook_bn`, `story_bn` - optional; when present the caption is written as a
+  small Bangla story (hook -> story -> takeaway) instead of a short tip
+- `emotion_bn` - the feeling the hook should carry
+- `concept` - which photo concept fits (`scarf`, `knit`, `jacket`, `kids`, ...)
+- `seasons`, `weather` - when this idea is relevant
 - `audience` - `kids`, `men`, `women` (picks hashtag groups)
-- `tags` - `layering`, `care`, `dhaka`, `style`, `winter`, `kids`
-- `type` - `STYLE TIP`, `LAYERING`, `CARE`, `CHECKLIST`, `KIDS`, `DHAKA NOTE`, `COLOUR`
+- `tags`, `type` - `STYLE TIP`, `LAYERING`, `CARE`, `CHECKLIST`, `KIDS`, `DHAKA NOTE`, `COLOUR`
 
-Ideas rotate by date, so the same day always gets the same idea and 36 days pass
-before a repeat. Add or edit ideas freely; the loader rejects duplicate ids,
-titles over 60 characters and notes over 90.
+Ideas are *chosen*, not blindly rotated: weather and season decide. The loader
+rejects duplicate ids, titles over 60 characters and notes over 90.
 
 ### Photos
 
-`assets/photos/` holds a small curated set of Creative Commons (CC0) and public
-domain stock photos, each recorded with its licence and source in
-`credits.json`. Two rules are absolute:
+**No photo is stored in this repository.** For each post the pipeline:
 
-- **No people, at all.** No faces, and therefore never a photo of a woman. A
-  shortlist is reviewed by eye before it is added.
-- **Relevant or nothing.** The post picks the best tag match for the idea; if no
-  photo matches, the graphic falls back to the text-only layout.
+1. searches free stock (Openverse, CC0 / public domain only) for the idea's
+   `concept`;
+2. keeps a result only when its title/tags actually mention the concept, and
+   rejects anything with people, or that is an artefact (poster, painting,
+   illustration, lobby card, stamp, map...);
+3. downloads it into the day's `out/` folder, decodes it, and rejects anything
+   too small, flat, corrupt or wrongly shaped;
+4. scores the survivors on detail and closeness to the brand palette
+   (`#FFFBF9`, `#E3CAA5`, `#ADB7B3`, `#594E38`), then picks the best, avoiding
+   photos used in the last 14 days;
+5. embeds the winner into the graphic and records its licence and source in
+   `post.json` and the report.
 
-Rarer tags weigh more than common ones, so a `kids` idea prefers a knit hat over
-a generic winter scene. Ties rotate by date. To refresh the set, edit
-`scripts/fetch_photos.py` and run it; to review the current set, run
-`python scripts/check_photos.py`.
+If nothing passes, the graphic falls back to the text-only layout - a wrong
+picture is worse than no picture. Watermarks cannot be detected reliably, so the
+report always prints the source for a human to check before approving.
 
 ### Product catalogue (optional)
 
@@ -146,11 +172,12 @@ mentioned. It is there if you later want separate product posts.
 
 ### Captions, hashtags, graphics
 
-- Engagement-first: a style, layering, care or Dhaka note. No product pushes, no
-  prices, no stock, no "buy now".
-- 80-320 characters, in Bangla, 5-10 hashtags. The caption ends with the Bangla
-  CTA (`পরে পড়ার জন্য সেভ করুন`) and a short follow line. Banned phrases include
-  the Bangla selling words (`কিনুন`, `ডিসকাউন্ট`, `স্টক`, ...).
+- Engagement-first: a style, layering, care or Dhaka note tuned to the weather
+  and season. No product pushes, no prices, no stock, no "buy now".
+- Up to 620 characters, in Bangla, 5-10 hashtags. Story ideas run
+  hook -> short story -> takeaway; tip ideas stay 1-3 sentences. Both end with
+  the Bangla CTA (`পরে পড়ার জন্য সেভ করুন`) and a short follow line. Banned
+  phrases include the Bangla selling words (`কিনুন`, `ডিসকাউন্ট`, `স্টক`, ...).
 - One required tag (`#KhujeNao`) plus audience tags, winter tags and Dhaka tags.
   Pools live in `config/brand.json`; the offline writer fills roughly
   1 + 2 audience + 4 winter + 2 local, then adds filler up to the limit.
@@ -166,8 +193,9 @@ mentioned. It is there if you later want separate product posts.
   correctly; both Bengali fonts are embedded as base64, so no font is needed at
   screenshot time. A plain-ASCII, photo-free run falls back to the Pillow layout
   so previews still work on a machine without Chrome.
-- No models: the photo never contains a person. Headlines are measured and
-  shrunk; if the text cannot fit, rendering fails instead of cropping.
+- No models: the photo never contains a person. Headlines and stories are
+  measured in the browser and shrunk until they clear the footer, so nothing is
+  cropped or overlapped.
 
 ## Safety gates (queue mode)
 
@@ -344,7 +372,12 @@ inside the rules, use your own hosting or Cloudinary/R2.
 - GitHub Actions: free for public repositories; private repositories get 2,000
   minutes/month on Free.
 - GitHub Pages: free for public repositories.
-- Gemini free tier: daily request limits. The writer makes at most 3 attempts.
+- Open-Meteo weather: free, no API key, no signup.
+- Google News RSS and Google's Bangladesh trending-searches feed: free, no key
+  (the trends feed is unofficial and may change).
+- Openverse photo search: free, no key, CC0 / public-domain results only.
+- Gemini free tier: daily request limits. The writer falls back to Bangla
+  templates when Gemini is busy or the quota is spent.
 - Buffer: free plans cap channels and queued posts. The API key page shows
   whether your plan includes API access.
 - No paid service is used automatically. If a quota is exhausted the run stops
@@ -355,25 +388,26 @@ inside the rules, use your own hosting or Cloudinary/R2.
 ```
 .github/workflows/daily-post.yml   preview -> approval -> image -> queue
 assets/fonts/                      Noto Bengali fonts (embedded in the graphic)
-assets/photos/                     curated people-free photos + credits.json
 config/brand.json                  brand facts, palette, hashtag pools
 config/content.json                the 36-idea library, with Bangla copy
+config/context.json                location, seasons, trend filters, photo queries
 config/products.json               optional product catalogue (unused by tips)
 config/research.json               legacy research settings (unused)
 docs/posts/                        public images served by GitHub Pages
 scripts/check_buffer.py            list Buffer organizations/channels
 scripts/check_ideas.py             render + validate every idea, contact sheet
-scripts/check_photos.py            contact sheet of the photo set, for review
-scripts/fetch_photos.py            re-download the photo set (rarely run)
 scripts/preview_week.py            generate N local previews
-src/content.py                     content loader + daily rotation
-src/photos.py                      photo library and tag-matched picking
+src/content.py                     content loader + idea fields
+src/idea.py                        situation -> chosen idea, with the reason
+src/weather.py                     Open-Meteo weather at posting time
+src/trends.py                      filtered niche trend signals (mood only)
+src/photo_fetch.py                 fetch + analyse + keep one relevant photo
 src/main.py                        pipeline, gates, exit codes
 src/config.py                      typed config loading
 src/env_file.py                    local .env loader (shell/CI wins)
-src/research.py                    legacy RSS research (unused by tips)
-src/topic_filter.py                legacy topic filter (unused by tips)
-src/writer.py                      Gemini JSON output + offline templates
+src/research.py                    RSS reader used by the trend signals
+src/topic_filter.py                keyword filters and title cleaning
+src/writer.py                      Gemini JSON output + Bangla templates
 src/graphics.py                    headless-Chrome renderer + Pillow fallback
 src/validator.py                   caption/image/public-URL checks
 src/buffer_client.py               Buffer GraphQL client
@@ -406,7 +440,9 @@ out/                               generated artifacts (gitignored)
 | `ZoneInfoNotFoundError` | `pip install tzdata` (already in `requirements.txt`) |
 | `no reviewed post for this date` | Run `--mode preview` first; queue mode never regenerates content |
 | `image on disk does not match post.json` | Something edited the PNG; rerun preview |
-| `photo missing for ...` | A file listed in `credits.json` is gone; run `scripts/fetch_photos.py` |
+| Photo: none (text-only layout) | No relevant, clean photo passed the filters; adjust the concept queries in `config/context.json` or accept the text-only card |
+| Weather unavailable in the report | Open-Meteo was unreachable; the post used season-only context and still published |
+| Trends unavailable in the report | The RSS sources failed or were all filtered out; that is normal and safe |
 | `public image check failed` | Pages has not deployed yet, or the URL serves different bytes |
 | `buffer: Buffer rejected the API key` | Create a new key at `https://publish.buffer.com/settings/api` |
 | `channel id ... not found` | Re-run `python scripts/check_buffer.py`; ids differ per organization |

@@ -27,7 +27,7 @@
   },
   "caption": {
     "min_chars": 80,
-    "max_chars": 320,
+    "max_chars": 620,
     "min_hashtags": 5,
     "max_hashtags": 10
   },
@@ -126,8 +126,10 @@
   "notes": [
     "This account posts winter tips and styling ideas, not product ads.",
     "Only facts from config/ may appear in a post. Never invent prices, stock, delivery promises, or product features.",
-    "The graphic uses only prepared stock photos with no people in them: no faces, and therefore never a photo of a woman.",
-    "Every photo must keep its licence details in assets/photos/credits.json.",
+    "The graphic uses a photo fetched at run time from free stock (CC0/public domain). No photo is stored in the repository.",
+    "A photo must be relevant to the idea, must pass the palette and detail checks, and must contain no people at all: no faces, and therefore never a photo of a woman.",
+    "If no photo passes, the graphic falls back to a text-only layout.",
+    "Trends are used only to tint the mood of the writing. They are never stated as facts, and politics, religion, music, films, violence and tragedy are all filtered out.",
     "Set verified=true only after a human has checked every field."
   ]
 }

@@ -46,7 +46,7 @@ def brand() -> Brand:
         tone="warm, practical",
         cta_text="Save this for later",
         cta_url="",
-        caption=CaptionRules(80, 320, 5, 10),
+        caption=CaptionRules(80, 620, 5, 10),
         price_policy="never",
         stock_policy="never",
         required_hashtags=("#KhujeNao",),
@@ -143,6 +143,25 @@ def idea() -> ContentIdea:
         title_bn="ঢাকার শীতে হালকা স্তর",
         body_bn="একটি টি-শার্ট দিয়ে শুরু করুন, তার উপরে সুইটশার্ট, শেষে হালকা জ্যাকেট।",
         note_bn="একটি ভারী কোটের চেয়ে হালকা স্তর ভালো।",
+        concept="knit",
+        seasons=("winter", "hemanta"),
+        weather=("cold", "chilly"),
+        emotion_bn="স্বস্তি",
+    )
+
+
+@pytest.fixture
+def story_idea(idea: ContentIdea) -> ContentIdea:
+    from dataclasses import replace
+
+    return replace(
+        idea,
+        id="foggy-commute",
+        type="DHAKA NOTE",
+        concept="weather",
+        weather=("fog", "mist", "cold"),
+        hook_bn="সকালে জানালা খুলে বোঝা যায়, আজ কুয়াশা শহরকে জড়িয়ে ধরেছে।",
+        story_bn="রিকশায় বসে মনে হয় হাতটা যেন বরফ।",
     )
 
 

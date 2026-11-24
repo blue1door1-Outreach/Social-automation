@@ -29,10 +29,10 @@ from typing import Any, Sequence
 
 import requests
 
-from . import graphics, photos, report, research, validator, writer
+from . import graphics, idea as idea_mod, photo_fetch, report, research, validator, writer
 from .buffer_client import BufferClient, BufferError, BufferUncertain, verify_channels
 from .config import Brand, ConfigError, load_all
-from .content import ContentIdea, load_content, pick_idea, type_label_bn
+from .content import ContentIdea, load_content, type_label_bn
 from .duplicate_guard import decide, make_post_id
 from .env_file import load_env_file
 from .redact import collect_secrets, set_secrets, setup_logging
@@ -279,10 +279,38 @@ def _next_steps(status: str, mode: str, out_dir: Path) -> list[str]:
     return ["Inspect the errors above."]
 
 
+def _recent(ledger: Ledger, day: date, days: int) -> tuple[list[str], list[str]]:
+    """Idea ids and photo ids used in the last ``days`` days, newest first."""
+    if days <= 0:
+        return [], []
+    floor = day.toordinal() - days
+    ideas: list[str] = []
+    photos: list[str] = []
+    try:
+        records = ledger.records()
+    except LedgerError:
+        return [], []
+    for record in records:
+        stamp = str(record.get("date", ""))
+        try:
+            ordinal = date.fromisoformat(stamp).toordinal()
+        except ValueError:
+            continue
+        if ordinal < floor or ordinal > day.toordinal():
+            continue
+        if record.get("idea_id"):
+            ideas.append(str(record["idea_id"]))
+        photo = record.get("photo")
+        if isinstance(photo, dict) and photo.get("id"):
+            photos.append(str(photo["id"]))
+    return ideas, photos
+
+
 def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     brand, catalog, _ = load_all(ROOT / args.config)
     content_config = load_content(ROOT / args.config / "content.json")
-    photo_library = photos.load_photos()
+    context_cfg = idea_mod.load_context(ROOT / args.config / "context.json")
+    recency_days = int(context_cfg.get("recency_days", 14))
     day = _resolve_day(args, brand)
     out_dir = (ROOT / args.out / day.isoformat()).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -297,7 +325,9 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     post: dict[str, Any] | None = None
     topic: Topic | None = None
     idea: ContentIdea | None = None
-    photo: photos.Photo | None = None
+    photo: photo_fetch.FetchedPhoto | None = None
+    situation: idea_mod.Situation | None = None
+    chosen: idea_mod.Chosen | None = None
     draft: writer.Draft | None = None
     image_meta: graphics.ImageMeta | None = None
     image_url = ""
@@ -312,13 +342,32 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             gates.append(str(exc))
 
     if draft is None and not gates and args.mode == "preview":
-        idea = pick_idea(content_config, day)
-        photo = photos.pick_photo(photo_library, idea.tags, idea.audience, day)
+        situation = idea_mod.build_situation(
+            context_cfg, day, session=session, offline=args.offline, log=LOG, timeout=args.timeout
+        )
+        warnings.extend(situation.errors)
+        used_ideas, used_photos = _recent(Ledger(ROOT / args.ledger), day, recency_days)
+        chosen = idea_mod.choose(content_config, situation, used=used_ideas, log=LOG)
+        idea = chosen.idea
+        if not args.offline:
+            photo = photo_fetch.fetch(
+                chosen.concept,
+                (context_cfg.get("photos") or {}).get("queries") or {},
+                out_dir,
+                day,
+                used=used_photos,
+                cfg=context_cfg.get("photos") or {},
+                session=session,
+                log=LOG,
+                timeout=args.timeout,
+            )
+            if photo is None:
+                warnings.append("photo: no relevant, clean photo found; using the text-only layout")
         topic = Topic(
             title=idea.title,
             link="",
-            source=f"content:{idea.id}",
-            score=0,
+            source=f"idea:{idea.id}",
+            score=chosen.score,
             product_id=None,
             is_fallback=True,
         )
@@ -332,6 +381,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 api_key=env.get("GEMINI_API_KEY", ""),
                 model=env.get("GEMINI_MODEL", writer.DEFAULT_MODEL),
                 session=session,
+                situation=situation,
             )
         except writer.WriterError as exc:
             errors.append(f"writer: {exc}")
@@ -402,15 +452,11 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 "bytes": image_meta.bytes,
                 "sha256": image_meta.sha256,
             },
-            "photo": (
-                {
-                    "id": photo.id,
-                    "file": photo.file,
-                    "credit": photo.credit(),
-                    "source": photo.source,
-                    "license": photo.license,
-                }
-                if photo
+            "photo": photo.as_dict() if photo else None,
+            "situation": situation.as_dict() if situation else None,
+            "idea": (
+                {"id": idea.id, "concept": chosen.concept if chosen else "", "reason": chosen.reason if chosen else ""}
+                if idea
                 else None
             ),
             "image_url": image_url,
@@ -495,6 +541,8 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                                     "created_at": post.get("created_at", _iso(started)),
                                     "updated_at": _iso(datetime.now(timezone.utc)),
                                     "topic": topic.title,
+                                    "idea_id": (post.get("idea") or {}).get("id", ""),
+                                    "photo": post.get("photo"),
                                     "caption_sha": hashlib.sha256(draft.caption.encode("utf-8")).hexdigest()[:16],
                                     "image_sha": image_meta.sha256,
                                     "image_url": image_url,
@@ -538,6 +586,8 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
         "draft": post["draft"] if post else None,
         "image": post["image"] if post else None,
         "photo": post.get("photo") if post else None,
+        "situation": post.get("situation") if post else None,
+        "idea": post.get("idea") if post else None,
         "image_url": image_url,
         "gates": gates,
         "warnings": warnings,

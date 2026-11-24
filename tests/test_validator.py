@@ -37,7 +37,8 @@ def test_short_caption_is_rejected(
 def test_long_caption_is_rejected(
     brand: Brand, catalog: Catalog, content: ContentConfig, idea: ContentIdea
 ) -> None:
-    long_caption = ("A" * 120 + " ") * 4
+    long_caption = ("A" * 120 + " ") * 12
+    assert len(long_caption) > brand.caption.max_chars
     draft = replace(base_draft(brand, content, idea), caption=long_caption)
     assert "caption_long" in codes(validate_draft(draft, brand, catalog), "error")
 

@@ -44,11 +44,36 @@ def build(context: dict[str, Any]) -> str:
         "",
     ]
 
+    situation = context.get("situation")
+    chosen = context.get("idea")
+    lines += ["## Situation", ""]
+    if situation:
+        lines.append(f"- When: {_cell(situation.get('weekday'))} at {situation.get('hour')}:00 ({_cell(situation.get('season'))})")
+        weather = situation.get("weather")
+        if weather:
+            lines.append(f"- Weather: {_cell(weather.get('summary'))} [{_cell(', '.join(weather.get('tags', [])))}]")
+        else:
+            lines.append("- Weather: unavailable (season-only context)")
+        if situation.get("trend_moods"):
+            lines.append(f"- Trend mood: {_cell(', '.join(situation.get('trend_moods', [])))}")
+        if situation.get("trend_titles"):
+            lines.append("- Trending now (mood only, never stated as fact):")
+            for title in situation.get("trend_titles", [])[:5]:
+                lines.append(f"  - {_cell(title)}")
+        if situation.get("errors"):
+            lines.append(f"- Signals unavailable: {_cell('; '.join(situation['errors']))}")
+    else:
+        lines.append("_Queue mode reuses the reviewed preview; signals are not re-read._")
+    if chosen:
+        lines.append(f"- Chosen idea: `{_cell(chosen.get('id'))}` (concept `{_cell(chosen.get('concept'))}`)")
+        lines.append(f"- Why: {_cell(chosen.get('reason'))}")
+    lines.append("")
+
     topic = context.get("topic")
     lines += ["## Content idea", ""]
     if topic:
         source = str(topic.get("source", ""))
-        origin = "curated content library" if source.startswith("content:") else source
+        origin = "curated content library" if source.startswith(("content:", "idea:")) else source
         lines.append(f"- **{_cell(topic.get('title'))}**")
         lines.append(f"- Source: {_cell(origin)}")
         if topic.get("link"):
@@ -80,7 +105,10 @@ def build(context: dict[str, Any]) -> str:
         )
         photo = context.get("photo")
         if photo:
-            lines.append(f"- Photo: {_cell(photo.get('credit'))}")
+            lines.append(
+                f"- Photo: {_cell(photo.get('credit'))} "
+                f"(concept `{_cell(photo.get('concept'))}`, palette distance {photo.get('palette_distance')})"
+            )
             if photo.get("source"):
                 lines.append(f"- Photo source: {_cell(photo['source'])}")
         else:

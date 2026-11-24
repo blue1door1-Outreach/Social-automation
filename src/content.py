@@ -33,6 +33,12 @@ class ContentIdea:
     title_bn: str = ""
     body_bn: str = ""
     note_bn: str = ""
+    concept: str = ""
+    seasons: tuple[str, ...] = ()
+    weather: tuple[str, ...] = ()
+    hook_bn: str = ""
+    story_bn: str = ""
+    emotion_bn: str = ""
 
     @property
     def display_title(self) -> str:
@@ -45,6 +51,10 @@ class ContentIdea:
     @property
     def display_note(self) -> str:
         return self.note_bn or self.note
+
+    @property
+    def is_story(self) -> bool:
+        return bool(self.hook_bn or self.story_bn)
 
 
 @dataclass(frozen=True)
@@ -172,6 +182,20 @@ def load_content(path: Path) -> ContentConfig:
                 title_bn=title_bn,
                 body_bn=body_bn,
                 note_bn=note_bn,
+                concept=str(item.get("concept", "")).strip().lower(),
+                seasons=tuple(
+                    str(value).strip().lower()
+                    for value in (item.get("seasons") or [])
+                    if str(value).strip()
+                ),
+                weather=tuple(
+                    str(value).strip().lower()
+                    for value in (item.get("weather") or [])
+                    if str(value).strip()
+                ),
+                hook_bn=str(item.get("hook_bn", "")).strip(),
+                story_bn=str(item.get("story_bn", "")).strip(),
+                emotion_bn=str(item.get("emotion_bn", "")).strip(),
             )
         )
 

@@ -125,11 +125,25 @@ def _hashtags(brand: Brand, audience: Sequence[str], rng: random.Random) -> tupl
     return tuple(chosen[:limit])
 
 
+def _situation_lines(situation: Any) -> str:
+    if situation is None:
+        return ""
+    lines = [f"Situation: {situation.brief()}"]
+    titles = list(getattr(situation, "trend_titles", ()) or ())
+    if titles:
+        lines.append(
+            "What people are talking about today (use for mood only; never state it as a fact): "
+            + "; ".join(titles[:5])
+        )
+    return "\n".join(lines)
+
+
 def build_from_idea(
     idea: ContentIdea,
     brand: Brand,
     content: ContentConfig,
     day: date,
+    situation: Any = None,
 ) -> Draft:
     rng = random.Random(f"{day.isoformat()}|{idea.id}")
 
@@ -139,10 +153,15 @@ def build_from_idea(
     cta = brand.cta_text_bn or brand.cta_text
     follow = content.display_follow
 
-    parts = [_ensure_sentence(title), _ensure_sentence(body)]
+    if idea.is_story:
+        head = idea.hook_bn or title
+        story = idea.story_bn or body
+        parts = [_ensure_sentence(head), _ensure_sentence(story), _ensure_sentence(note)]
+    else:
+        parts = [_ensure_sentence(title), _ensure_sentence(body)]
     if cta:
         parts.append(_ensure_sentence(cta))
-    caption = " ".join(parts).strip()
+    caption = " ".join(part for part in parts if part).strip()
 
     if follow:
         with_follow = f"{caption} {_ensure_sentence(follow)}".strip()
@@ -155,8 +174,8 @@ def build_from_idea(
     if len(caption) > brand.caption.max_chars:
         caption = " ".join(
             [
-                _ensure_sentence(title),
-                _ensure_sentence(body),
+                _ensure_sentence(idea.hook_bn or title),
+                _ensure_sentence(idea.story_bn or body),
                 _ensure_sentence(cta) if cta else "",
             ]
         ).strip()
@@ -164,7 +183,7 @@ def build_from_idea(
         caption = _clip(caption, brand.caption.max_chars)
 
     return Draft(
-        hook=title,
+        hook=idea.hook_bn or title,
         caption=caption,
         hashtags=_hashtags(brand, idea.audience, rng),
         image_headline=title,
@@ -179,13 +198,18 @@ def _system_prompt(brand: Brand) -> str:
         f"You write short social captions in Bangla (Bengali script) for {brand.name}, "
         f"{brand.description} Audience: {brand.audience}. "
         f"Tone: {brand.tone}. Location: {brand.location}.\n"
-        "This account shares winter tips, not product ads.\n"
+        "This account shares warm, useful winter notes for people in Dhaka, not product ads.\n"
+        "Write like a caring friend from Dhaka who notices small things: fog on the window, "
+        "the school run at 7am, chilly hands around a hot cup, a mother folding sweaters. "
+        "Be specific, gentle and beautiful, and make the reader feel understood before "
+        "you give the tip.\n"
         "Hard rules:\n"
-        "- Write every caption, headline and takeaway in Bangla, not English.\n"
-        "- Use only the idea given by the user. Invent nothing.\n"
+        "- Write every caption, headline and takeaway in Bangla only. Never use English words.\n"
+        "- Use only the idea and situation given by the user. Invent no facts, no news, no claims.\n"
         "- Never sell. No price, discount, stock, delivery, warranty, material or 'buy now'.\n"
         "- Never mention a product name or push a product.\n"
-        "- One to three short sentences. No emoji. At most one exclamation mark.\n"
+        "- No politics, no religion, no music, no films, no celebrities, no violence, no tragedy.\n"
+        "- One to three short sentences unless told to write a story. No emoji. At most one exclamation mark.\n"
         "- Keep hashtags in English letters and digits only.\n"
         "- Return JSON only, matching the schema. No code fences, no commentary."
     )
@@ -199,25 +223,41 @@ def _allowed_tags(brand: Brand, audience: Sequence[str]) -> list[str]:
     return list(dict.fromkeys(pool))
 
 
-def _user_prompt(idea: ContentIdea, brand: Brand, content: ContentConfig) -> str:
+def _user_prompt(idea: ContentIdea, brand: Brand, content: ContentConfig, situation: Any = None) -> str:
     tag_pool = ", ".join(_allowed_tags(brand, idea.audience)[:30])
     cta = brand.cta_text_bn or brand.cta_text
+    brief = _situation_lines(situation)
+    if idea.is_story:
+        shape = (
+            "Structure the caption as a tiny story in Bangla:\n"
+            "1) a hook line that names the feeling of the moment (fog, cold hands, a hurry),\n"
+            "2) one or two sentences of gentle story from Dhaka daily life,\n"
+            "3) one short takeaway sentence.\n"
+        )
+        length = f"caption: {brand.caption.min_chars}-{brand.caption.max_chars} characters of Bangla.\n"
+    else:
+        shape = "Write a short Bangla tip: a warm hook line, then the useful detail.\n"
+        length = f"caption: {brand.caption.min_chars}-{min(brand.caption.max_chars, 320)} characters of Bangla, 1-3 sentences.\n"
+
     requirements = (
-        f"caption: {brand.caption.min_chars}-{brand.caption.max_chars} characters of Bangla, 1-3 sentences.\n"
+        f"{length}"
         f"hashtags: {brand.caption.min_hashtags}-{brand.caption.max_hashtags} English tags, each starting with #, "
         f"must include {', '.join(brand.required_hashtags) or 'none'}. "
         f"Prefer tags from this pool: {tag_pool or 'none'}.\n"
         "image_headline: the Bangla title, or 2-6 Bangla words.\n"
         "image_subline: under 70 Bangla characters, a short takeaway.\n"
-        "hook: the Bangla title."
+        "hook: the Bangla hook line."
     )
     return (
         f"Idea type: {idea.type}\n"
         f"Bangla title: {idea.display_title}\n"
         f"Bangla body: {idea.display_body}\n"
         f"Bangla takeaway: {idea.display_note}\n"
+        f"Bangla mood: {idea.emotion_bn or 'উষ্ণতা'}\n"
         f"End the caption with this Bangla CTA: {cta or 'none'}\n"
-        f"Do not use these phrases: {', '.join(brand.banned_phrases) or 'none'}\n\n"
+        f"Do not use these phrases: {', '.join(brand.banned_phrases) or 'none'}\n"
+        f"{brief}\n\n"
+        f"{shape}\n"
         f"{requirements}\n\n"
         'Return {"hook","caption","hashtags","image_headline","image_subline"}.'
     )
@@ -382,22 +422,23 @@ def generate(
     base_url: str = GEMINI_BASE,
     timeout: int = 30,
     log: logging.Logger | None = None,
+    situation: Any = None,
 ) -> Draft:
     log = log or LOG
     if offline:
         log.info("writer: offline mode, using templates")
-        return build_from_idea(idea, brand, content, day)
+        return build_from_idea(idea, brand, content, day, situation)
     if not api_key:
         log.warning("writer: GEMINI_API_KEY is not set, falling back to templates")
-        return build_from_idea(idea, brand, content, day)
+        return build_from_idea(idea, brand, content, day, situation)
 
     session = session or requests.Session()
     payload = {
         "systemInstruction": {"parts": [{"text": _system_prompt(brand)}]},
-        "contents": [{"role": "user", "parts": [{"text": _user_prompt(idea, brand, content)}]}],
+        "contents": [{"role": "user", "parts": [{"text": _user_prompt(idea, brand, content, situation)}]}],
         "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 512,
+            "temperature": 0.8,
+            "maxOutputTokens": 800,
             "responseMimeType": "application/json",
             "responseSchema": _SCHEMA,
         },
@@ -406,7 +447,7 @@ def generate(
         raw = _call_gemini(payload, api_key, model, session, base_url, timeout)
     except WriterUnavailable as exc:
         log.warning("writer: Gemini unavailable, using templates: %s", exc)
-        fallback = build_from_idea(idea, brand, content, day)
+        fallback = build_from_idea(idea, brand, content, day, situation)
         return replace(fallback, source="offline-fallback")
     data = _extract_json(raw)
     draft = _post_process(data, idea, brand)

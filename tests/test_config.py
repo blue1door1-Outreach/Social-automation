@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from src.config import load_all
@@ -75,17 +76,49 @@ def test_brand_carries_bangla_copy() -> None:
         assert phrase in brand.banned_phrases
 
 
-def test_photo_library_is_bangla_ready_and_people_free() -> None:
-    from src.photos import load_photos
+def test_photos_are_fetched_not_stored() -> None:
+    """The repo must not carry a photo library any more."""
+    assert not (ROOT / "assets" / "photos").exists()
+    assert not (ROOT / "src" / "photos.py").exists()
 
-    library = load_photos(ROOT / "assets" / "photos")
-    assert len(library.photos) >= 10
-    for photo in library.photos:
-        assert photo.no_people is True, photo.id
-        assert photo.tags, photo.id
-        assert photo.license, photo.id
-        assert photo.source, photo.id
-        assert photo.path.exists(), photo.id
+
+def test_context_config_loads() -> None:
+    from src.idea import load_context, season_for
+
+    cfg = load_context(ROOT / "config" / "context.json")
+    assert cfg["location"]["latitude"]
+    assert cfg["photos"]["queries"]
+    assert cfg["trends"]["deny_keywords"]
+    assert set(cfg["photos"]["queries"]) >= {"scarf", "knit", "kids", "care", "colour"}
+    season, _ = season_for(date(2026, 12, 15), cfg)
+    assert season == "winter"
+    season, _ = season_for(date(2026, 6, 15), cfg)
+    assert season == "warm"
+
+
+def test_every_idea_has_a_concept_with_queries() -> None:
+    from src.content import load_content
+    from src.idea import load_context
+
+    cfg = load_context(ROOT / "config" / "context.json")
+    concepts = set(cfg["photos"]["queries"])
+    content = load_content(ROOT / "config" / "content.json")
+    for idea in content.ideas:
+        assert idea.concept, idea.id
+        assert idea.concept in concepts, f"{idea.id}: unknown concept {idea.concept}"
+        assert idea.seasons, idea.id
+        assert not (idea.hook_bn and not idea.story_bn), idea.id
+
+
+def test_story_posts_carry_bangla_hook_and_story() -> None:
+    from src.content import load_content
+
+    content = load_content(ROOT / "config" / "content.json")
+    stories = [idea for idea in content.ideas if idea.is_story]
+    assert len(stories) >= 8
+    for idea in stories:
+        assert idea.hook_bn and idea.story_bn, idea.id
+        assert any("\u0980" <= char <= "\u09ff" for char in idea.hook_bn), idea.id
 
 
 def test_content_rotation_covers_multiple_ideas() -> None:

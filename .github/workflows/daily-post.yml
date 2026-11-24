@@ -1,0 +1,195 @@
+name: Daily post
+
+on:
+  schedule:
+    # 04:00 UTC = 10:00 Asia/Dhaka (UTC+6, no daylight saving).
+    # Scheduled runs only generate a preview. Dispatch "queue" to publish.
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "preview generates only; queue publishes after the github-pages environment is approved"
+        type: choice
+        options: [preview, queue]
+        default: preview
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-post
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUNBUFFERED: "1"
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Ensure fonts
+        continue-on-error: true
+        run: sudo apt-get install -y fonts-dejavu-core
+
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      - name: Test
+        run: python -m pytest
+
+      - name: Generate preview
+        run: python -m src.main --mode preview --out out
+
+      - name: Upload preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-post-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: warn
+
+  publish:
+    needs: preview
+    if: inputs.mode == 'queue'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Create this environment in the repository settings and add yourself as a
+    # required reviewer. Approval is the human gate before anything is queued.
+    # Pages is deployed from this same job, so no separate Pages workflow and
+    # no branch build are needed (GITHUB_TOKEN pushes never trigger those).
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      contents: write   # commit the image and the ledger
+      pages: write      # create the Pages deployment
+      id-token: write   # OIDC token required by deploy-pages
+    env:
+      PYTHONUNBUFFERED: "1"
+      ENABLE_QUEUEING: ${{ vars.ENABLE_QUEUEING }}
+      BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+      BUFFER_ORGANIZATION_ID: ${{ vars.BUFFER_ORGANIZATION_ID }}
+      BUFFER_CHANNEL_FB: ${{ vars.BUFFER_CHANNEL_FB }}
+      BUFFER_CHANNEL_IG: ${{ vars.BUFFER_CHANNEL_IG }}
+      PUBLIC_IMAGE_BASE_URL: ${{ vars.PUBLIC_IMAGE_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Ensure fonts
+        continue-on-error: true
+        run: sudo apt-get install -y fonts-dejavu-core
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Check configuration
+        run: |
+          missing=0
+          for name in PUBLIC_IMAGE_BASE_URL ENABLE_QUEUEING BUFFER_ORGANIZATION_ID BUFFER_CHANNEL_FB BUFFER_CHANNEL_IG; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing configuration::$name is not set in repository variables"
+              missing=1
+            fi
+          done
+          if [ -z "$BUFFER_API_KEY" ]; then
+            echo "::error title=Missing configuration::BUFFER_API_KEY is not set in repository secrets"
+            missing=1
+          fi
+          exit $missing
+
+      - name: Download the reviewed preview
+        uses: actions/download-artifact@v4
+        with:
+          name: daily-post-${{ github.run_id }}
+          path: reviewed
+
+      - name: Read preview metadata
+        id: meta
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          directories = sorted(p for p in Path("reviewed").iterdir() if p.is_dir())
+          if not directories:
+              raise SystemExit("no preview directory in the artifact")
+          latest = directories[-1]
+          post = json.loads((latest / "post.json").read_text(encoding="utf-8"))
+          if post.get("status") != "PREVIEW READY":
+              raise SystemExit(f"preview status is {post.get('status')!r}, expected 'PREVIEW READY'")
+          print(f"date={latest.name}")
+          print(f"post_id={post['post_id']}")
+          PY
+
+      - name: Add the reviewed image to docs/posts
+        run: |
+          mkdir -p docs/posts
+          cp "reviewed/${{ steps.meta.outputs.date }}/image.png" \
+             "docs/posts/${{ steps.meta.outputs.post_id }}.png"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "docs/posts/${{ steps.meta.outputs.post_id }}.png"
+          if git diff --cached --quiet; then
+            echo "image already committed"
+          else
+            git commit -m "chore: host image for ${{ steps.meta.outputs.post_id }}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Package the Pages site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Queue to Buffer
+        run: |
+          image_url="${PUBLIC_IMAGE_BASE_URL%/}/${{ steps.meta.outputs.post_id }}.png"
+          echo "public image: $image_url"
+          python -m src.main --mode queue \
+            --date "${{ steps.meta.outputs.date }}" \
+            --out reviewed \
+            --image-url "$image_url"
+
+      - name: Commit publish ledger
+        if: always()
+        run: |
+          if [ -f state/ledger.jsonl ] && [ -n "$(git status --porcelain -- state/ledger.jsonl)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state/ledger.jsonl
+            git commit -m "chore: update publish ledger"
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+                 && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                echo "ledger pushed"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "::error title=Ledger not pushed::The run finished but the ledger could not be pushed. Check Buffer before rerunning."
+            exit 1
+          fi
+          echo "ledger unchanged"

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+out/
+.env
+state/*.tmp
+
+# Local tool configuration; may contain provider API keys
+opencode.json
+opencode.jsonc
+.opencode/

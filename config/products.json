@@ -1,0 +1,246 @@
+{
+  "niche": "winter clothing and cold-weather basics",
+  "season": "November to February",
+  "currency": "BDT",
+  "show_prices": false,
+  "verified": false,
+  "notes": [
+    "Products 1-8 are the shop's own list. The rest are relevant winter items added for post variety and reach.",
+    "Nothing here claims a price, stock level, material or delivery term. The writer never states any of those.",
+    "The graphic is text-only: no models, no people, and no photos of women.",
+    "Set verified=true only after you have checked every name and description."
+  ],
+  "products": [
+    {
+      "id": "solid-printed-cotton-hoodie",
+      "name": "Solid Printed Cotton Hoodie",
+      "category": "hoodie",
+      "description": "Cotton hoodie with a printed front.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["hoodie", "printed hoodie", "cotton hoodie"]
+    },
+    {
+      "id": "padded-jacket",
+      "name": "Padded Jacket",
+      "category": "outerwear",
+      "description": "Padded winter jacket for layering.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["padded jacket", "jacket", "outerwear"]
+    },
+    {
+      "id": "varsity-jacket",
+      "name": "Varsity Jacket",
+      "category": "outerwear",
+      "description": "Varsity-style jacket.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["varsity", "college jacket", "jacket"]
+    },
+    {
+      "id": "padded-vest-jacket",
+      "name": "Padded Vest Jacket",
+      "category": "outerwear",
+      "description": "Padded vest jacket.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["vest", "gilet", "body warmer"]
+    },
+    {
+      "id": "flannel-check-shacket",
+      "name": "Flannel Check Shacket",
+      "category": "shirt-jacket",
+      "description": "Flannel check shacket.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["flannel", "check", "shacket", "overshirt"]
+    },
+    {
+      "id": "denim-shirt-jacket",
+      "name": "Denim Shirt / Jacket",
+      "category": "denim",
+      "description": "Denim shirt that works as a light jacket.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["denim", "jean jacket", "overshirt"]
+    },
+    {
+      "id": "full-sleeve-polo-shirt",
+      "name": "Full Sleeve Polo Shirt",
+      "category": "polo",
+      "description": "Full sleeve polo shirt.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men"],
+      "keywords": ["polo", "full sleeve", "collar shirt"]
+    },
+    {
+      "id": "sweater",
+      "name": "Sweater",
+      "category": "knitwear",
+      "description": "Winter sweater.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["sweater", "knit pullover", "jumper"]
+    },
+    {
+      "id": "sweatshirt",
+      "name": "Sweatshirt",
+      "category": "sweatshirt",
+      "description": "Pullover sweatshirt, an everyday winter layer.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["sweatshirt", "crew neck"]
+    },
+    {
+      "id": "fleece-jacket",
+      "name": "Fleece Jacket",
+      "category": "outerwear",
+      "description": "Fleece jacket for cool mornings.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["fleece", "fleece jacket"]
+    },
+    {
+      "id": "bomber-jacket",
+      "name": "Bomber Jacket",
+      "category": "outerwear",
+      "description": "Bomber-style jacket.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["bomber", "bomber jacket"]
+    },
+    {
+      "id": "knit-cardigan",
+      "name": "Knit Cardigan",
+      "category": "knitwear",
+      "description": "Knit cardigan with a button front.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["cardigan", "knit cardigan"]
+    },
+    {
+      "id": "turtle-neck-sweater",
+      "name": "Turtle Neck Sweater",
+      "category": "knitwear",
+      "description": "Turtle neck knit sweater.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["turtle neck", "turtleneck", "roll neck"]
+    },
+    {
+      "id": "thermal-base-layer",
+      "name": "Thermal Base Layer Set",
+      "category": "base layer",
+      "description": "Thermal base layer top and bottom.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["thermal", "base layer", "inner"]
+    },
+    {
+      "id": "thermal-top",
+      "name": "Thermal Top",
+      "category": "base layer",
+      "description": "Thermal top to wear under a shirt.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["thermal top", "thermal inner"]
+    },
+    {
+      "id": "kids-winter-set",
+      "name": "Kids Winter Set",
+      "category": "set",
+      "description": "Matching winter set for children.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids"],
+      "keywords": ["kids set", "winter set", "matching set"]
+    },
+    {
+      "id": "knit-beanie",
+      "name": "Knit Beanie",
+      "category": "accessories",
+      "description": "Knit beanie with a folded cuff.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["beanie", "cap", "winter cap"]
+    },
+    {
+      "id": "woven-scarf",
+      "name": "Woven Scarf",
+      "category": "accessories",
+      "description": "Woven scarf with fringed ends.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["men", "women"],
+      "keywords": ["scarf", "muffler", "wrap"]
+    },
+    {
+      "id": "knit-gloves",
+      "name": "Knit Gloves",
+      "category": "accessories",
+      "description": "Knit gloves with a stretch cuff.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["gloves", "mittens"]
+    },
+    {
+      "id": "wool-socks",
+      "name": "Wool Socks",
+      "category": "accessories",
+      "description": "Warm socks for cold floors and mornings.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["socks", "wool socks"]
+    },
+    {
+      "id": "ear-muffs",
+      "name": "Ear Muffs",
+      "category": "accessories",
+      "description": "Ear muffs for cold, windy mornings.",
+      "price": null,
+      "stock": "unknown",
+      "enabled": true,
+      "audience": ["kids", "men", "women"],
+      "keywords": ["ear muffs", "earmuffs"]
+    }
+  ]
+}

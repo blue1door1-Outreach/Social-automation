@@ -1,0 +1,110 @@
+{
+  "name": "Khuje Nao",
+  "tagline": "Winter essentials, found for you.",
+  "description": "An online shop in Bangladesh for kids, men and women. Current focus: winter clothing and cold-weather basics.",
+  "audience": "Kids (boys and girls), men and women in Bangladesh",
+  "location": "Dhaka, Bangladesh",
+  "language": "en",
+  "timezone": "Asia/Dhaka",
+  "publish_time_local": "10:00",
+  "verified": false,
+  "colors": {
+    "primary": "#0B2239",
+    "secondary": "#1F4E6B",
+    "accent": "#CFE6F2",
+    "surface": "#F8FBFD",
+    "ink": "#0B2239",
+    "muted": "#5A7382",
+    "text": "#FFFFFF"
+  },
+  "tone": "warm, practical, plain-spoken",
+  "cta": {
+    "text": "Order via inbox",
+    "url": ""
+  },
+  "caption": {
+    "min_chars": 80,
+    "max_chars": 320,
+    "min_hashtags": 5,
+    "max_hashtags": 10
+  },
+  "hashtags": {
+    "local": [
+      "#Dhaka",
+      "#Bangladesh",
+      "#DhakaFashion",
+      "#BangladeshFashion",
+      "#DhakaShopping",
+      "#DhakaWinter",
+      "#WinterInBangladesh",
+      "#BangladeshiFashion"
+    ],
+    "winter": [
+      "#WinterWear",
+      "#WinterFashion",
+      "#WinterStyle",
+      "#WinterOutfit",
+      "#WinterCollection",
+      "#WinterEssentials",
+      "#WinterLooks",
+      "#Layering",
+      "#ColdWeather",
+      "#StayWarm",
+      "#WinterSeason",
+      "#WinterVibes",
+      "#WinterLayering",
+      "#WinterBasics"
+    ],
+    "kids": [
+      "#KidsFashion",
+      "#KidsWinterWear",
+      "#KidsStyle",
+      "#BoysFashion",
+      "#GirlsFashion",
+      "#KidsOutfit",
+      "#LittleFashion",
+      "#KidsWinter"
+    ],
+    "men": [
+      "#MensFashion",
+      "#MensStyle",
+      "#MensWear",
+      "#MensWinterWear",
+      "#MensOutfit",
+      "#MensWinterStyle"
+    ],
+    "women": [
+      "#WomensFashion",
+      "#WomensStyle",
+      "#WomensWinterWear",
+      "#WomensOutfit",
+      "#WomensWinterStyle"
+    ]
+  },
+  "price_policy": "never",
+  "stock_policy": "never",
+  "required_hashtags": [
+    "#KhujeNao"
+  ],
+  "banned_phrases": [
+    "best in the world",
+    "100% guaranteed",
+    "guaranteed",
+    "free delivery",
+    "cash on delivery",
+    "discount",
+    "sale",
+    "% off",
+    "taka",
+    "tk.",
+    "bdt",
+    "limited stock",
+    "sold out"
+  ],
+  "notes": [
+    "Only facts from config/ may appear in a post. Never invent prices, stock, delivery promises, or product features.",
+    "News headlines are inspiration only. Never present a headline as a product fact.",
+    "The graphic is text-only: no people, and never a photo of a woman.",
+    "Set verified=true only after a human has checked every field."
+  ]
+}

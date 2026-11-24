@@ -31,12 +31,13 @@ import requests
 
 from . import graphics, report, research, validator, writer
 from .buffer_client import BufferClient, BufferError, BufferUncertain, verify_channels
-from .config import Brand, Catalog, ConfigError, load_all
+from .config import Brand, ConfigError, load_all
+from .content import ContentIdea, load_content, pick_idea
 from .duplicate_guard import decide, make_post_id
 from .env_file import load_env_file
 from .redact import collect_secrets, set_secrets, setup_logging
 from .state import Ledger, LedgerError
-from .topic_filter import Topic, choose_topic, pick_product
+from .topic_filter import Topic
 
 LOG = logging.getLogger("khuje.main")
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,7 +57,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", default="config", help="config directory (default: config)")
     parser.add_argument("--ledger", default="state/ledger.jsonl")
     parser.add_argument("--image-url", default=None, help="public URL of the reviewed image")
-    parser.add_argument("--offline", action="store_true", help="skip network research and AI")
+    parser.add_argument("--offline", action="store_true", help="use templates instead of Gemini")
     parser.add_argument("--timeout", type=int, default=20)
     return parser.parse_args(argv)
 
@@ -81,11 +82,6 @@ def _resolve_day(args: argparse.Namespace, brand: Brand) -> date:
         except ValueError as exc:
             raise MainError(f"--date must be YYYY-MM-DD, got {args.date!r}") from exc
     return datetime.now(timezone.utc).astimezone(brand.tz).date()
-
-
-def _kicker(catalog: Catalog) -> str:
-    word = (catalog.niche.split() or ["winter"])[0]
-    return f"{word.upper()} EDIT"
 
 
 def _fetch_public(url: str) -> tuple[str, bytes]:
@@ -170,14 +166,12 @@ def _buffer_key(env: dict[str, str]) -> str:
     return (env.get("BUFFER_API_KEY") or env.get("BUFFER_ACCESS_TOKEN") or "").strip()
 
 
-def _gate_problems(env: dict[str, str], brand: Brand, catalog: Catalog, image_url: str) -> list[str]:
+def _gate_problems(env: dict[str, str], brand: Brand, image_url: str) -> list[str]:
     problems: list[str] = []
     if not _truthy(env.get("ENABLE_QUEUEING")):
         problems.append("ENABLE_QUEUEING is not true; queueing is disabled")
     if not brand.verified:
         problems.append("brand.json is not verified")
-    if not catalog.verified:
-        problems.append("products.json is not verified (product facts not confirmed)")
     if not _buffer_key(env):
         problems.append("BUFFER_API_KEY is not set")
 
@@ -286,7 +280,8 @@ def _next_steps(status: str, mode: str, out_dir: Path) -> list[str]:
 
 
 def run(args: argparse.Namespace, env: dict[str, str]) -> int:
-    brand, catalog, research_config = load_all(ROOT / args.config)
+    brand, catalog, _ = load_all(ROOT / args.config)
+    content_config = load_content(ROOT / args.config / "content.json")
     day = _resolve_day(args, brand)
     out_dir = (ROOT / args.out / day.isoformat()).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -297,10 +292,10 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     warnings: list[str] = []
     errors: list[str] = []
     gates: list[str] = []
-    research_errors: list[str] = []
     decision_text = ""
     post: dict[str, Any] | None = None
     topic: Topic | None = None
+    idea: ContentIdea | None = None
     draft: writer.Draft | None = None
     image_meta: graphics.ImageMeta | None = None
     image_url = ""
@@ -315,36 +310,30 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             gates.append(str(exc))
 
     if draft is None and not gates and args.mode == "preview":
-        if args.offline:
-            signals: list[research.Signal] = []
-            warnings.append("research: offline mode, approved fallback topic used")
-        else:
-            signals, research_errors = research.collect(session, research_config, started, LOG)
-            warnings.extend(f"research: {error}" for error in research_errors)
-
-        topic = choose_topic(
-            signals, research_config, catalog, day, None if args.offline else LOG
+        idea = pick_idea(content_config, day)
+        topic = Topic(
+            title=idea.title,
+            link="",
+            source=f"content:{idea.id}",
+            score=0,
+            product_id=None,
+            is_fallback=True,
         )
-        if topic is None:
-            gates.append("no topic: research returned nothing and no fallback topics are configured")
-        else:
-            product = pick_product(topic, catalog, day)
-            try:
-                draft = writer.generate(
-                    topic,
-                    product,
-                    brand,
-                    catalog,
-                    day,
-                    offline=args.offline,
-                    api_key=env.get("GEMINI_API_KEY", ""),
-                    model=env.get("GEMINI_MODEL", writer.DEFAULT_MODEL),
-                    session=session,
-                )
-            except writer.WriterError as exc:
-                errors.append(f"writer: {exc}")
-            if draft is not None and draft.source == "offline-fallback":
-                warnings.append("writer: Gemini unavailable, used offline templates")
+        try:
+            draft = writer.generate(
+                idea,
+                brand,
+                content_config,
+                day,
+                offline=args.offline,
+                api_key=env.get("GEMINI_API_KEY", ""),
+                model=env.get("GEMINI_MODEL", writer.DEFAULT_MODEL),
+                session=session,
+            )
+        except writer.WriterError as exc:
+            errors.append(f"writer: {exc}")
+        if draft is not None and draft.source == "offline-fallback":
+            warnings.append("writer: Gemini unavailable, used offline templates")
 
     if draft is not None and not errors:
         issues = validator.validate_draft(draft, brand, catalog)
@@ -358,7 +347,9 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 brand=brand,
                 headline=draft.image_headline,
                 subline=draft.image_subline,
-                kicker=_kicker(catalog),
+                kicker=content_config.kicker,
+                label=idea.type if idea else "",
+                follow=content_config.follow,
             )
         except graphics.GraphicsError as exc:
             errors.append(f"graphics: {exc}")
@@ -418,7 +409,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     ledger = Ledger(ROOT / args.ledger)
 
     if args.mode == "queue" and post is not None and not errors and not gates:
-        gates.extend(_gate_problems(env, brand, catalog, image_url))
+        gates.extend(_gate_problems(env, brand, image_url))
 
         if not gates:
             url_issues = validator.check_public_image(image_url, image_meta.sha256, _fetch_public)

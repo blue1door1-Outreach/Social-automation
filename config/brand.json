@@ -1,7 +1,7 @@
 {
   "name": "Khuje Nao",
-  "tagline": "Winter essentials, found for you.",
-  "description": "An online shop in Bangladesh for kids, men and women. Current focus: winter clothing and cold-weather basics.",
+  "tagline": "Winter style notes for Dhaka.",
+  "description": "An online shop in Bangladesh sharing winter styling, layering and care notes for kids, men and women.",
   "audience": "Kids (boys and girls), men and women in Bangladesh",
   "location": "Dhaka, Bangladesh",
   "language": "en",
@@ -9,17 +9,17 @@
   "publish_time_local": "10:00",
   "verified": false,
   "colors": {
-    "primary": "#0B2239",
-    "secondary": "#1F4E6B",
-    "accent": "#CFE6F2",
-    "surface": "#F8FBFD",
-    "ink": "#0B2239",
-    "muted": "#5A7382",
-    "text": "#FFFFFF"
+    "primary": "#594E38",
+    "secondary": "#ADB7B3",
+    "accent": "#E3CAA5",
+    "surface": "#FFFBF9",
+    "ink": "#594E38",
+    "muted": "#7E7363",
+    "text": "#FFFBF9"
   },
-  "tone": "warm, practical, plain-spoken",
+  "tone": "warm, useful, plain-spoken",
   "cta": {
-    "text": "Order via inbox",
+    "text": "Save this for later",
     "url": ""
   },
   "caption": {
@@ -99,9 +99,19 @@
     "tk.",
     "bdt",
     "limited stock",
-    "sold out"
+    "sold out",
+    "buy now",
+    "order now",
+    "shop now",
+    "dm to order",
+    "inbox to order",
+    "limited time",
+    "hurry",
+    "last chance",
+    "click the link"
   ],
   "notes": [
+    "This account posts winter tips and styling ideas, not product ads.",
     "Only facts from config/ may appear in a post. Never invent prices, stock, delivery promises, or product features.",
     "News headlines are inspiration only. Never present a headline as a product fact.",
     "The graphic is text-only: no people, and never a photo of a woman.",

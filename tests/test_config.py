@@ -42,10 +42,30 @@ def test_every_fallback_product_exists_and_is_enabled() -> None:
             assert product.enabled, topic.title
 
 
-def test_every_category_has_copy() -> None:
-    from src.writer import DEFAULT_HOOKS, HOOKS, LINES
+def test_content_library_loads_and_is_usable() -> None:
+    from src.content import MAX_NOTE, MAX_TITLE, load_content
 
-    _, catalog, _ = load_all(ROOT / "config")
-    for product in catalog.enabled():
-        assert product.category.lower() in HOOKS or DEFAULT_HOOKS
-        assert product.category.lower() in LINES
+    content = load_content(ROOT / "config" / "content.json")
+    assert len(content.ideas) >= 30
+    assert content.kicker
+    ids = [idea.id for idea in content.ideas]
+    assert len(ids) == len(set(ids))
+    allowed = {"kids", "men", "women"}
+    for idea in content.ideas:
+        assert 2 <= len(idea.title) <= MAX_TITLE, idea.id
+        assert idea.note and len(idea.note) <= MAX_NOTE, idea.id
+        assert idea.body, idea.id
+        assert idea.type, idea.id
+        assert set(idea.audience) <= allowed, idea.id
+        assert idea.tags, idea.id
+
+
+def test_content_rotation_covers_multiple_ideas() -> None:
+    from datetime import date, timedelta
+
+    from src.content import load_content, pick_idea
+
+    content = load_content(ROOT / "config" / "content.json")
+    start = date(2026, 11, 24)
+    picked = {pick_idea(content, start + timedelta(days=offset)).id for offset in range(30)}
+    assert len(picked) == 30

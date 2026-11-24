@@ -100,7 +100,7 @@ def _queue_env(due_at: str = "") -> dict[str, str]:
     }
 
 
-def _verified_brand_and_catalog():
+def _verified_brand():
     from src.config import Brand, CaptionRules, Catalog
 
     colors = {key: "#000000" for key in ("primary", "secondary", "accent", "surface", "ink", "muted", "text")}
@@ -134,39 +134,39 @@ def _verified_brand_and_catalog():
         verified=True,
         products=(),
     )
-    return brand, catalog
+    return brand
 
 
 def test_due_at_must_be_iso() -> None:
-    brand, catalog = _verified_brand_and_catalog()
+    brand = _verified_brand()
 
     bad = main_module._gate_problems(
-        _queue_env("tomorrow"), brand, catalog, "https://example.com/a.png"
+        _queue_env("tomorrow"), brand, "https://example.com/a.png"
     )
     assert any("BUFFER_DUE_AT" in problem for problem in bad), bad
 
     naive = main_module._gate_problems(
-        _queue_env("2026-11-24T04:00:00"), brand, catalog, "https://example.com/a.png"
+        _queue_env("2026-11-24T04:00:00"), brand, "https://example.com/a.png"
     )
     assert any("timezone" in problem for problem in naive), naive
 
     good = main_module._gate_problems(
-        _queue_env("2026-11-24T04:00:00Z"), brand, catalog, "https://example.com/a.png"
+        _queue_env("2026-11-24T04:00:00Z"), brand, "https://example.com/a.png"
     )
     assert good == [], good
 
 
 def test_malformed_ids_are_gate_problems() -> None:
-    brand, catalog = _verified_brand_and_catalog()
+    brand = _verified_brand()
 
     env = _queue_env()
     env["BUFFER_ORGANIZATION_ID"] = "6b0416841dfa25309243c31d name=My organization"
-    problems = main_module._gate_problems(env, brand, catalog, "https://example.com/a.png")
+    problems = main_module._gate_problems(env, brand, "https://example.com/a.png")
     assert any("BUFFER_ORGANIZATION_ID looks malformed" in problem for problem in problems), problems
 
     env = _queue_env()
     env["BUFFER_CHANNEL_FB"] = "6b041845 id=extra"
-    problems = main_module._gate_problems(env, brand, catalog, "https://example.com/a.png")
+    problems = main_module._gate_problems(env, brand, "https://example.com/a.png")
     assert any("BUFFER_CHANNEL_FB looks malformed" in problem for problem in problems), problems
 
 

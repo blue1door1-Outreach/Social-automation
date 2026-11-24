@@ -1,8 +1,9 @@
-"""Branded 1080x1350 graphic with Pillow.
+"""Branded 1080x1350 editorial graphic with Pillow.
 
-The design is deliberately plain: gradient background, one light card, a short
-headline, a subline, a footer. Text is measured and shrunk to fit; if it cannot
-fit within the limits, rendering fails rather than cropping.
+Design goals: warm-white paper, sand and taupe accents, deep-brown text, a serif
+headline, generous white space. Text only - no people, no product photos. Text is
+measured and shrunk to fit; if it cannot fit, rendering fails instead of
+cropping.
 """
 
 from __future__ import annotations
@@ -17,8 +18,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from .config import Brand
 
 CANVAS = (1080, 1350)
-CARD = (70, 236, 1010, 1116)  # left, top, right, bottom
-PADDING = 64
+MARGIN = 88
 MAX_BYTES = 8 * 1024 * 1024
 
 
@@ -43,7 +43,7 @@ class Fit:
     line_height: int
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=6)
 def font_path(weight: str) -> Path:
     root = Path(__file__).resolve().parent.parent
     names = {
@@ -63,6 +63,14 @@ def font_path(weight: str) -> Path:
             "LiberationSans-Regular.ttf",
             "segoeui.ttf",
         ),
+        "serif": (
+            "Georgia.ttf",
+            "georgia.ttf",
+            "DejaVuSerif-Bold.ttf",
+            "LiberationSerif-Bold.ttf",
+            "timesbd.ttf",
+            "Times New Roman Bold.ttf",
+        ),
     }[weight]
     directories = [
         root / "assets" / "fonts",
@@ -79,8 +87,7 @@ def font_path(weight: str) -> Path:
             if candidate.exists():
                 return candidate
     raise GraphicsError(
-        "no usable font found. Add assets/fonts/Inter-Bold.ttf and Inter-Regular.ttf "
-        "or install DejaVu fonts."
+        f"no usable {weight} font found. Add assets/fonts or install DejaVu fonts."
     )
 
 
@@ -91,23 +98,6 @@ def _rgb(value: str) -> tuple[int, int, int]:
 
 def _mix(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))  # type: ignore[return-value]
-
-
-def _background(size: tuple[int, int], top: tuple[int, int, int], bottom: tuple[int, int, int]) -> Image.Image:
-    width, height = size
-    strip = Image.new("RGB", (1, height))
-    pixels = strip.load()
-    for y in range(height):
-        pixels[0, y] = _mix(top, bottom, y / max(height - 1, 1))
-    return strip.resize((width, height), Image.BILINEAR)
-
-
-def _glow(size: tuple[int, int], center: tuple[int, int], radius: int, color: tuple[int, int, int], alpha: int) -> Image.Image:
-    layer = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-    x, y = center
-    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=(*color, alpha))
-    return layer.filter(ImageFilter.GaussianBlur(radius // 2))
 
 
 def _wrap(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
@@ -146,15 +136,13 @@ def fit_text(
         lines = _wrap(draw, text, font, max_width)
         if not lines or len(lines) > max_lines:
             continue
-        line_height = int(size * 1.16)
-        if sum(draw.textlength(line, font=font) > max_width + 1 for line in lines):
+        line_height = int(size * 1.12)
+        if any(draw.textlength(line, font=font) > max_width + 1 for line in lines):
             continue
         if len(lines) * line_height > max_height:
             continue
 
-        # Avoid an orphan word when a two-line wrap is badly unbalanced
-        # ("The quilted puffer" / "jacket"). Re-wrap narrower and keep it if
-        # both lines still fit.
+        # Avoid an orphan word in a badly balanced two-line wrap.
         if len(lines) == 2:
             first_width = draw.textlength(lines[0], font=font)
             second_width = draw.textlength(lines[1], font=font)
@@ -171,25 +159,40 @@ def fit_text(
     )
 
 
-def _draw_lines(
+def _draw_left_lines(
     draw: ImageDraw.ImageDraw,
     lines: tuple[str, ...],
     font: ImageFont.FreeTypeFont,
-    center_x: int,
+    x: int,
     top: int,
     line_height: int,
     fill: tuple[int, int, int],
 ) -> int:
     y = top
     for line in lines:
-        draw.text((center_x, y), line, font=font, fill=fill, anchor="ma")
+        draw.text((x, y), line, font=font, fill=fill, anchor="la")
         y += line_height
     return y
 
 
-def _draw_tracked(
+def _draw_tracked_left(
     draw: ImageDraw.ImageDraw,
-    center_x: int,
+    x: int,
+    top: int,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    fill: tuple[int, int, int],
+    tracking: int,
+) -> None:
+    cursor = x
+    for char in text:
+        draw.text((cursor, top), char, font=font, fill=fill, anchor="la")
+        cursor += draw.textlength(char, font=font) + tracking
+
+
+def _draw_tracked_right(
+    draw: ImageDraw.ImageDraw,
+    x: int,
     top: int,
     text: str,
     font: ImageFont.FreeTypeFont,
@@ -198,10 +201,46 @@ def _draw_tracked(
 ) -> None:
     widths = [draw.textlength(char, font=font) for char in text]
     total = sum(widths) + tracking * max(len(text) - 1, 0)
-    x = center_x - total / 2
+    cursor = x - total
     for char, width in zip(text, widths):
-        draw.text((x, top), char, font=font, fill=fill, anchor="la")
-        x += width + tracking
+        draw.text((cursor, top), char, font=font, fill=fill, anchor="la")
+        cursor += width + tracking
+
+
+def _soft_circle(
+    size: tuple[int, int],
+    center: tuple[int, int],
+    radius: int,
+    color: tuple[int, int, int],
+    alpha: int,
+    blur: int,
+) -> Image.Image:
+    layer = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    x, y = center
+    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=(*color, alpha))
+    return layer.filter(ImageFilter.GaussianBlur(blur))
+
+
+def _pill(
+    draw: ImageDraw.ImageDraw,
+    x: int,
+    y: int,
+    label: str,
+    font: ImageFont.FreeTypeFont,
+    fill: tuple[int, int, int],
+    ink: tuple[int, int, int],
+) -> int:
+    tracking = 3
+    text_width = sum(draw.textlength(char, font=font) for char in label) + tracking * max(len(label) - 1, 0)
+    width = int(text_width + 48)
+    height = 46
+    draw.rounded_rectangle((x, y, x + width, y + height), radius=23, fill=fill)
+    cursor = x + 24
+    for char in label:
+        draw.text((cursor, y + 11), char, font=font, fill=ink, anchor="la")
+        cursor += draw.textlength(char, font=font) + tracking
+    return y + height
 
 
 def render(
@@ -210,94 +249,117 @@ def render(
     brand: Brand,
     headline: str,
     subline: str = "",
-    kicker: str = "WINTER EDIT",
+    kicker: str = "WINTER STYLE NOTES",
+    label: str = "",
+    follow: str = "",
 ) -> ImageMeta:
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    primary = _rgb(brand.color("primary", "#0B2239"))
-    secondary = _rgb(brand.color("secondary", "#1F4E6B"))
-    accent = _rgb(brand.color("accent", "#CFE6F2"))
-    surface = _rgb(brand.color("surface", "#F8FBFD"))
-    ink = _rgb(brand.color("ink", "#0B2239"))
-    muted = _rgb(brand.color("muted", "#5A7382"))
+    ink = _rgb(brand.color("ink", "#594E38"))
+    muted = _rgb(brand.color("muted", "#7E7363"))
+    sand = _rgb(brand.color("accent", "#E3CAA5"))
+    taupe = _rgb(brand.color("secondary", "#ADB7B3"))
+    paper = _rgb(brand.color("surface", "#FFFBF9"))
 
     width, height = CANVAS
-    image = _background((width, height), primary, secondary).convert("RGBA")
-    image = Image.alpha_composite(image, _glow((width, height), (930, 160), 430, accent, 34))
-    image = Image.alpha_composite(image, _glow((width, height), (120, 1240), 360, secondary, 40))
+    image = Image.new("RGBA", (width, height), (*paper, 255))
+
+    # Soft colour washes, kept low-contrast so the paper still reads as paper.
+    image = Image.alpha_composite(image, _soft_circle((width, height), (1090, 30), 300, sand, 60, 70))
+    image = Image.alpha_composite(image, _soft_circle((width, height), (-40, 1310), 260, taupe, 42, 70))
+    image = Image.alpha_composite(image, _soft_circle((width, height), (1120, 1120), 360, sand, 48, 80))
     draw = ImageDraw.Draw(image)
 
     bold = font_path("bold")
     regular = font_path("regular")
+    serif = font_path("serif")
 
-    # Wordmark, outside the card.
-    wordmark_font = ImageFont.truetype(str(bold), 26)
-    _draw_tracked(draw, width // 2, 84, brand.name.upper(), wordmark_font, accent, 6)
+    # Header.
+    wordmark_font = ImageFont.truetype(str(bold), 24)
+    _draw_tracked_left(draw, MARGIN, 92, brand.name.upper(), wordmark_font, ink, 6)
+    place_font = ImageFont.truetype(str(regular), 19)
+    place = brand.location.split(",")[0].strip().upper()
+    _draw_tracked_right(draw, width - MARGIN, 96, place, place_font, muted, 4)
 
-    left, top, right, bottom = CARD
-    card_w, card_h = right - left, bottom - top
+    rule = _mix(taupe, paper, 0.45)
+    draw.line((MARGIN, 152, width - MARGIN, 152), fill=rule, width=2)
 
-    shadow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-    shadow_draw.rounded_rectangle(
-        (left, top + 26, right, bottom + 26), radius=40, fill=(0, 0, 0, 96)
-    )
-    image = Image.alpha_composite(image, shadow.filter(ImageFilter.GaussianBlur(38)))
-    draw = ImageDraw.Draw(image)
+    cursor = 200
+    if kicker:
+        kicker_font = ImageFont.truetype(str(bold), 19)
+        _draw_tracked_left(draw, MARGIN, cursor, kicker.upper(), kicker_font, muted, 4)
+        cursor += 52
 
-    draw.rounded_rectangle((left, top, right, bottom), radius=40, fill=surface)
-    center_x = left + card_w // 2
-    inner_w = card_w - PADDING * 2
+    if label:
+        label_font = ImageFont.truetype(str(bold), 19)
+        cursor = _pill(draw, MARGIN, cursor, label.upper(), label_font, sand, ink) + 54
+    else:
+        cursor += 20
 
-    kicker_font = ImageFont.truetype(str(bold), 24)
-    _draw_tracked(draw, center_x, top + 74, kicker.upper(), kicker_font, secondary, 7)
+    head_top = cursor
+    inner_w = width - MARGIN * 2
 
-    divider_color = _mix(surface, secondary, 0.35)
-    draw.line((center_x - 46, top + 126, center_x + 46, top + 126), fill=divider_color, width=3)
-
-    head_fit = fit_text(
-        draw, headline, "bold", inner_w, 372, 3, max_size=92, min_size=54
-    )
+    head_fit = fit_text(draw, headline, "serif", inner_w, 400, 5, max_size=104, min_size=56)
     sub_fit = (
-        fit_text(draw, subline, "regular", inner_w, 150, 2, max_size=42, min_size=30)
+        fit_text(draw, subline, "regular", inner_w - 40, 160, 3, max_size=36, min_size=27)
         if subline.strip()
         else None
     )
 
     block_height = len(head_fit.lines) * head_fit.line_height
-    gap = 46 if sub_fit else 0
+    gap = 42 if sub_fit else 0
     if sub_fit:
         block_height += gap + len(sub_fit.lines) * sub_fit.line_height
 
-    region_top, region_bottom = top + 190, bottom - 190
-    cursor = region_top + max(0, (region_bottom - region_top - block_height) // 2)
-    cursor = _draw_lines(draw, head_fit.lines, head_fit.font, center_x, cursor, head_fit.line_height, ink)
+    region_top, region_bottom = head_top + 10, 1010
+    centered = region_top + max(0, (region_bottom - region_top - block_height) // 2)
+    block_top = max(head_top + 40, centered - 80)
+
+    # Small sand accent beside the headline.
+    accent_height = min(max(int(head_fit.line_height * 0.9), 64), 118)
+    draw.rounded_rectangle(
+        (MARGIN - 40, block_top + 8, MARGIN - 34, block_top + 8 + accent_height),
+        radius=3,
+        fill=sand,
+    )
+
+    cursor = _draw_left_lines(
+        draw, head_fit.lines, head_fit.font, MARGIN, block_top, head_fit.line_height, ink
+    )
     if sub_fit:
         cursor += gap
-        _draw_lines(draw, sub_fit.lines, sub_fit.font, center_x, cursor, sub_fit.line_height, muted)
-
-    hairline_y = bottom - 132
-    draw.line((left + PADDING, hairline_y, right - PADDING, hairline_y), fill=divider_color, width=2)
-
-    footer_y = hairline_y + 34
-    brand_font = ImageFont.truetype(str(bold), 30)
-    cta_font = ImageFont.truetype(str(regular), 27)
-    draw.text((left + PADDING, footer_y), brand.name, font=brand_font, fill=ink, anchor="la")
-    if brand.cta_text:
-        draw.text(
-            (right - PADDING, footer_y + 2),
-            brand.cta_text,
-            font=cta_font,
-            fill=muted,
-            anchor="ra",
+        _draw_left_lines(
+            draw, sub_fit.lines, sub_fit.font, MARGIN, cursor, sub_fit.line_height, muted
         )
 
-    # Footer outside the card.
-    footer_color = _mix(primary, accent, 0.78)
-    place_font = ImageFont.truetype(str(regular), 22)
-    place = brand.location.split(",")[0].strip().upper()
-    _draw_tracked(draw, width // 2, 1206, place, place_font, footer_color, 6)
+    # Footer rule.
+    footer_rule_y = 1050
+    draw.line((MARGIN, footer_rule_y, width - MARGIN, footer_rule_y), fill=rule, width=2)
+
+    # Palette signature: sand, taupe, deep brown.
+    chip_y = footer_rule_y + 26
+    chip = 18
+    for index, color in enumerate((sand, taupe, ink)):
+        x = MARGIN + index * (chip + 10)
+        draw.rounded_rectangle((x, chip_y, x + chip, chip_y + chip), radius=5, fill=color)
+
+    brand_font = ImageFont.truetype(str(serif), 34)
+    cta_font = ImageFont.truetype(str(regular), 26)
+    follow_font = ImageFont.truetype(str(regular), 21)
+
+    brand_y = chip_y + 44
+    draw.text((MARGIN, brand_y), brand.name, font=brand_font, fill=ink, anchor="la")
+    if brand.cta_text:
+        draw.text(
+            (width - MARGIN, brand_y + 7),
+            brand.cta_text,
+            font=cta_font,
+            fill=ink,
+            anchor="ra",
+        )
+    if follow:
+        draw.text((MARGIN, brand_y + 52), follow, font=follow_font, fill=muted, anchor="la")
 
     image.convert("RGB").save(out_path, format="PNG", optimize=True)
 

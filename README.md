@@ -1,11 +1,11 @@
 # Khuje Nao - daily Facebook/Instagram automation
 
-A cautious pipeline that produces one winter-clothing post per day for a shop in
-Dhaka: research, caption, a branded 1080x1350 graphic, validation, then an
-optional Buffer queue.
+A cautious pipeline that produces one educational winter post per day for a shop
+in Dhaka: a curated style, care or layering idea, a short caption, a branded
+1080x1350 editorial graphic, validation, then an optional Buffer queue.
 
 **Current state: preview works with no credentials.** Publishing stays blocked
-until the product facts are verified and Buffer access is configured.
+until the brand config is verified and Buffer access is configured.
 
 ## Test it locally (5 minutes, no keys)
 
@@ -25,15 +25,15 @@ Open:
 - `out/<today>/report.md` - what happened and why
 - `out/<today>/post.json` - the machine-readable post
 
-`--offline` skips RSS and Gemini and uses an approved fallback topic plus the
-template writer. Nothing is queued.
+`--offline` uses the deterministic template writer and never calls Gemini.
+Nothing is queued.
 
 Several days at once:
 
 ```powershell
 python scripts/preview_week.py --days 7
 python scripts/preview_week.py --days 7 --start 2026-11-23
-python scripts/preview_week.py --days 7 --online   # RSS + Gemini
+python scripts/preview_week.py --days 7 --online   # try Gemini instead of templates
 ```
 
 Offline is the default there so output is repeatable. Each day is a normal
@@ -42,11 +42,10 @@ preview run.
 ## What it does
 
 ```
-research (Google News RSS)
-   -> filter (relevance + blocked topics)
-   -> topic (or an approved fallback topic)
-   -> caption (Gemini, or deterministic templates when offline)
-   -> graphic (Pillow, 1080x1350, text only)
+content library (config/content.json)
+   -> one idea for the day (deterministic rotation, 36 ideas)
+   -> caption (Gemini, or deterministic templates)
+   -> graphic (Pillow, 1080x1350, editorial, text only)
    -> validation (caption rules, image decode, size, dimensions)
    -> [gate] duplicate check, public image bytes, Buffer channels
    -> queue per platform, or stop
@@ -66,73 +65,71 @@ A non-zero exit is intentional: a skipped post should be visible, not silent.
 
 | File | What goes in it |
 | --- | --- |
-| `config/brand.json` | Name, tagline, tone, colours, CTA, caption limits, hashtag pools, banned phrases, timezone (`Asia/Dhaka`), `verified` |
-| `config/products.json` | Products with name, category, audience, keywords, `price: null`, `stock: "unknown"`, `verified` |
-| `config/research.json` | Search queries, optional RSS feeds, relevance/blocked keywords, approved fallback topics |
+| `config/brand.json` | Name, palette, tone, CTA, caption limits, hashtag pools, banned phrases, timezone (`Asia/Dhaka`), `verified` |
+| `config/content.json` | The idea library: 36 style, care, kids and Dhaka notes, each with a title, body, short takeaway, audience and tags |
+| `config/products.json` | Optional reference catalogue, kept for future product posts. The daily tips do not read it |
+| `config/research.json` | Legacy research settings, kept for experiments. Not used by the daily flow |
 
-The writer may only use facts from these files. It is never allowed to invent
-prices, discounts, stock, delivery promises, materials or availability.
+The writer may only use the selected idea and the brand config. It never sells
+and never states a price, discount, stock level, delivery promise, material or
+availability.
 
-### Products
+### Content library
 
-`config/products.json` holds 21 winter items. The first nine are the shop's own
-list; the rest are relevant winter pieces added for post variety and reach.
+`config/content.json` is the source of every post. Each idea has:
 
-Shop list:
+- `title` - the big graphic headline (max 60 characters)
+- `body` - the useful part, used in the caption
+- `note` - a short takeaway under the headline (max 90)
+- `audience` - `kids`, `men`, `women` (picks hashtag groups)
+- `tags` - `layering`, `care`, `dhaka`, `style`, `winter`, `kids`
+- `type` - `STYLE TIP`, `LAYERING`, `CARE`, `CHECKLIST`, `KIDS`, `DHAKA NOTE`, `COLOUR`
 
-1. Solid Printed Cotton Hoodie
-2. Padded Jacket
-3. Varsity Jacket
-4. Padded Vest Jacket
-5. Flannel Check Shacket
-6. Denim Shirt / Jacket
-7. Full Sleeve Polo Shirt
-8. Sweater
-9. Sweatshirt
+Ideas rotate by date, so the same day always gets the same idea and 36 days pass
+before a repeat. Add or edit ideas freely; the loader rejects duplicate ids,
+titles over 60 characters and notes over 90.
 
-Added for reach: Fleece Jacket, Bomber Jacket, Knit Cardigan, Turtle Neck
-Sweater, Thermal Base Layer Set, Thermal Top, Kids Winter Set, Knit Beanie,
-Woven Scarf, Knit Gloves, Wool Socks, Ear Muffs.
+### Product catalogue (optional)
 
-Delete any item or set `"enabled": false` if you would rather not post about it.
-
-Every entry ships with `price: null`, `stock: "unknown"` and the catalog has
-`verified: false`. Nothing here claims a price, stock level, material or
-delivery term, and the writer cannot state any of those.
-
-**Queueing refuses to run until a human sets `verified: true` in both
-`brand.json` and `products.json`.** Because these posts are for reach and not
-for sale, that check is simply "I have read the names and descriptions" - it is
-not a stock check.
+`config/products.json` still holds the 21 items, with `price: null` and
+`stock: "unknown"`. It is not used by the daily tip posts and no product name is
+mentioned. It is there if you later want separate product posts.
 
 ### Order of operations
 
 1. Preview locally with no credentials (now).
-2. Adjust names, descriptions and hashtags until you like the output.
-3. Set `verified: true` in `brand.json` and `products.json`.
+2. Edit `config/content.json` ideas, the palette and the CTA until you like the
+   output.
+3. Set `verified: true` in `brand.json`.
 4. Create the Buffer account, connect Facebook and Instagram, and add the API
    key. This is the point where Buffer details become necessary.
 5. Run `python scripts/check_buffer.py`, then a single supervised queue post.
-6. Only then add `ENABLE_QUEUEING=true` and both channels.
+6. Only then add `ENABLE_QUEUEING=true`.
 
 ### Captions, hashtags, graphics
 
-- 80-320 characters, English, 5-10 hashtags.
+- Educational and engagement-first: a style, layering, care or Dhaka note. No
+  product pushes, no prices, no stock, no "buy now".
+- 80-320 characters, English, 5-10 hashtags. The caption ends with the CTA
+  (`Save this for later`) and a short follow line.
 - One required tag (`#KhujeNao`) plus audience tags, winter tags and Dhaka tags.
   Pools live in `config/brand.json`; the offline writer fills roughly
   1 + 2 audience + 4 winter + 2 local, then adds filler up to the limit.
 - Instagram's limit is **2,196 UTF-16 code units**, and a line break counts as
   2. The validator measures the real payload, not `len()`.
-- The graphic is text only: no models, no stock photos, and therefore never a
-  photo of a woman. Headlines are measured and shrunk; if the text cannot fit,
-  rendering fails instead of cropping.
+- The graphic uses your palette: Warm White `#FFFBF9` paper, Sand Beige
+  `#E3CAA5`, Taupe `#ADB7B3` and Deep Brown `#594E38` for text. A serif headline,
+  a type pill, a small palette signature, the brand, the CTA and the follow line.
+- Text only: no models, no stock photos, and therefore never a photo of a woman.
+  Headlines are measured and shrunk; if the text cannot fit, rendering fails
+  instead of cropping.
 
 ## Safety gates (queue mode)
 
 All of these must pass, or nothing is published:
 
 1. `ENABLE_QUEUEING=true`
-2. `brand.json` and `products.json` are verified
+2. `brand.json` is verified
 3. `BUFFER_API_KEY` and `BUFFER_ORGANIZATION_ID` are set
 4. Both channel ids are set (`BUFFER_CHANNEL_FB`, `BUFFER_CHANNEL_IG`)
 5. Buffer returns those channels in that organization, with matching services
@@ -312,19 +309,21 @@ inside the rules, use your own hosting or Cloudinary/R2.
 
 ```
 .github/workflows/daily-post.yml   preview -> approval -> image -> queue
-config/brand.json                  brand facts, caption rules, hashtag pools
-config/products.json               product facts
-config/research.json               sources, filters, fallback topics
+config/brand.json                  brand facts, palette, hashtag pools
+config/content.json                the 36-idea educational library
+config/products.json               optional product catalogue (unused by tips)
+config/research.json               legacy research settings (unused)
 docs/posts/                        public images served by GitHub Pages
 scripts/check_buffer.py            list Buffer organizations/channels
 scripts/preview_week.py            generate N local previews
+src/content.py                     content loader + daily rotation
 src/main.py                        pipeline, gates, exit codes
 src/config.py                      typed config loading
 src/env_file.py                    local .env loader (shell/CI wins)
-src/research.py                    Google News RSS + optional feeds
-src/topic_filter.py                relevance, blocked topics, fallback
+src/research.py                    legacy RSS research (unused by tips)
+src/topic_filter.py                legacy topic filter (unused by tips)
 src/writer.py                      Gemini JSON output + offline templates
-src/graphics.py                    Pillow renderer + text fitting
+src/graphics.py                    Pillow editorial renderer + text fitting
 src/validator.py                   caption/image/public-URL checks
 src/buffer_client.py               Buffer GraphQL client
 src/duplicate_guard.py             post ids and retry policy
@@ -337,11 +336,13 @@ out/                               generated artifacts (gitignored)
 
 ## Still needed from the shop
 
-- Set `verified: true` in `config/brand.json` and `config/products.json` once you
-  are happy with the names and copy.
-- Buffer account, API key, organization id and the two channel ids (step 4
-  above; not needed for previews).
-- Repo owner/name; enable Pages on `main` / `docs`.
+- Confirm the Taupe hex. I read it from your palette image as `#ADB7B3`; if it is
+  different, change it in `config/brand.json`.
+- Read a few ideas in `config/content.json` and adjust the wording to your voice.
+- Set `verified: true` in `config/brand.json`.
+- Buffer account, API key, organization id and the two channel ids (already
+  configured in this repo).
+- Repo Pages source and the `github-pages` environment (see GitHub Actions).
 - Confirm the 10:00 Asia/Dhaka target and daily cadence.
 
 ## Troubleshooting

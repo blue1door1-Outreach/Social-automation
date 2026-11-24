@@ -45,9 +45,10 @@ def build(context: dict[str, Any]) -> str:
     ]
 
     topic = context.get("topic")
-    lines += ["## Topic", ""]
+    lines += ["## Content idea", ""]
     if topic:
-        origin = "approved fallback" if topic.get("is_fallback") else topic.get("source", "")
+        source = str(topic.get("source", ""))
+        origin = "curated content library" if source.startswith("content:") else source
         lines.append(f"- **{_cell(topic.get('title'))}**")
         lines.append(f"- Source: {_cell(origin)}")
         if topic.get("link"):
@@ -55,7 +56,7 @@ def build(context: dict[str, Any]) -> str:
         if topic.get("score"):
             lines.append(f"- Relevance score: {topic['score']}")
     else:
-        lines.append("_No topic selected._")
+        lines.append("_No idea selected._")
     lines.append("")
 
     draft = context.get("draft")

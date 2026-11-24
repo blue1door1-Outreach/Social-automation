@@ -5,7 +5,7 @@
 
 Each day is a normal preview run, so nothing is queued. Offline is the default
 because it needs no API key and gives repeatable output; pass ``--online`` to
-use RSS research and Gemini.
+let Gemini rewrite the selected idea.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--online",
         action="store_true",
-        help="use RSS research and Gemini instead of the offline topic/templates",
+        help="let Gemini rewrite the idea instead of using templates",
     )
     args = parser.parse_args(argv)
     if not 1 <= args.days <= 31:

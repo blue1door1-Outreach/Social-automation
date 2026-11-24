@@ -1,15 +1,16 @@
-"""Caption and headline generation.
+"""Caption and headline generation for educational winter posts.
 
-Two paths:
+The account publishes styling, layering and care notes, not product ads. Two
+paths:
 
-* ``build_offline`` - deterministic, template based, used when there is no API
-  key or the network is off. Safe but repetitive.
-* ``generate`` - Gemini with a JSON response schema. On quota/network trouble it
-  retries a few times, then raises ``WriterError`` so the run stops instead of
-  publishing something half-finished.
+* ``build_from_idea`` - deterministic templates from ``config/content.json``,
+  used offline or when there is no API key.
+* ``generate`` - Gemini rewrites the same idea into a shorter caption, using a
+  JSON response schema. A retired model or rejected key stops the run; a 5xx or
+  timeout falls back to the template so a busy API does not lose the day.
 
-Neither path is allowed to invent product facts. The only inputs are the topic,
-the product's name/category, and the brand config.
+Neither path may invent facts or sell: no prices, stock, delivery, materials,
+"buy now", or product pushes.
 """
 
 from __future__ import annotations
@@ -25,77 +26,14 @@ from typing import Any, Sequence
 
 import requests
 
-from .config import Brand, Catalog, Product
-from .topic_filter import Topic
+from .config import Brand
+from .content import ContentConfig, ContentIdea
 
 LOG = logging.getLogger("khuje.writer")
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 # Checked 2026-11-24: 2.5 Flash is closed to new users; 3.8 Flash is current.
 DEFAULT_MODEL = "gemini-3.8-flash"
-
-HOOKS: dict[str, tuple[str, ...]] = {
-    "hoodie": ("Hoodie weather.", "Easy layer, all day.", "Cold mornings, covered."),
-    "outerwear": ("Winter, sorted.", "Cold mornings, handled.", "One layer, done."),
-    "shirt-jacket": ("Shacket season.", "Checks and layers.", "Between shirt and jacket."),
-    "denim": ("Denim, layered.", "Cold-day denim.", "The everyday overshirt."),
-    "polo": ("Polo, but warmer.", "Full sleeves, clean look.", "Smart and simple."),
-    "sweatshirt": ("Sweatshirt weather.", "Easy layer, all day.", "Soft and simple."),
-    "knitwear": ("Knit weather.", "Soft layers, easy days.", "A warmer kind of basic."),
-    "base layer": ("The hidden layer.", "Warmth starts underneath.", "First layer, best layer."),
-    "set": ("Winter, head to toe.", "Little layers, sorted.", "One set, ready."),
-    "accessories": ("Small pieces, big difference.", "Details that warm you up.", "The finishing layer."),
-}
-DEFAULT_HOOKS = ("Winter, sorted.", "Layer up, simply.", "Cold outside, easy inside.")
-
-# Safe benefit lines. They describe the category, never a material, price,
-# stock level or delivery promise.
-LINES: dict[str, tuple[str, ...]] = {
-    "hoodie": (
-        "A soft layer for school runs and evening walks.",
-        "Easy to pull on when the morning turns cold.",
-    ),
-    "outerwear": (
-        "A warm layer for the foggy morning commute.",
-        "Made for the cold snap, easy to wear every day.",
-    ),
-    "shirt-jacket": (
-        "A check layer that works over a tee.",
-        "Between a shirt and a jacket, right for Dhaka winter.",
-    ),
-    "denim": (
-        "Denim that layers without the bulk.",
-        "An easy overshirt for cooler afternoons.",
-    ),
-    "polo": (
-        "Full sleeves for the cooler days.",
-        "A clean collar for winter mornings.",
-    ),
-    "sweatshirt": (
-        "A soft layer for school runs and evening walks.",
-        "Easy to pull on when the morning turns cold.",
-    ),
-    "knitwear": (
-        "A soft knit for the cooler evenings.",
-        "Easy warmth for the office and the ride home.",
-    ),
-    "base layer": (
-        "The layer that keeps the cold out.",
-        "Warmth that starts under everything.",
-    ),
-    "set": (
-        "A matching winter set for the little ones.",
-        "Everything for a cold morning, in one set.",
-    ),
-    "accessories": (
-        "A small piece that changes the whole outfit.",
-        "The finishing touch for a cold morning.",
-    ),
-}
-DEFAULT_LINES = (
-    "A winter basic that earns its place.",
-    "An easy pick for the colder days.",
-)
 
 
 class WriterError(RuntimeError):
@@ -131,15 +69,14 @@ def _ensure_sentence(text: str) -> str:
     return f"{text}."
 
 
-def _audience_pool(brand: Brand, product: Product | None) -> list[str]:
+def _audience_pool(brand: Brand, audience: Sequence[str]) -> list[str]:
     pool: list[str] = []
-    if product:
-        for group in product.audience:
-            pool.extend(brand.hashtag_pools.get(group.lower(), ()))
+    for group in audience:
+        pool.extend(brand.hashtag_pools.get(group.lower(), ()))
     return list(dict.fromkeys(pool))
 
 
-def _hashtags(brand: Brand, product: Product | None, rng: random.Random) -> tuple[str, ...]:
+def _hashtags(brand: Brand, audience: Sequence[str], rng: random.Random) -> tuple[str, ...]:
     limit = brand.caption.max_hashtags
     chosen: list[str] = []
 
@@ -155,13 +92,13 @@ def _hashtags(brand: Brand, product: Product | None, rng: random.Random) -> tupl
     for tag in brand.required_hashtags:
         add(tag)
 
-    audience = _audience_pool(brand, product)
+    audience_pool = _audience_pool(brand, audience)
     winter = list(brand.hashtag_pools.get("winter", ()))
     local = list(brand.hashtag_pools.get("local", ()))
 
     plan: list[tuple[list[str], int]] = []
-    if audience:
-        plan.append((audience, 2))
+    if audience_pool:
+        plan.append((audience_pool, 2))
     plan.append((winter, 4))
     plan.append((local, 2))
 
@@ -170,7 +107,7 @@ def _hashtags(brand: Brand, product: Product | None, rng: random.Random) -> tupl
         for tag in pool[:quota]:
             add(tag)
 
-    filler = audience + winter + local
+    filler = audience_pool + winter + local
     rng.shuffle(filler)
     for tag in filler:
         add(tag)
@@ -178,47 +115,45 @@ def _hashtags(brand: Brand, product: Product | None, rng: random.Random) -> tupl
     return tuple(chosen[:limit])
 
 
-def build_offline(
-    topic: Topic,
-    product: Product | None,
+def build_from_idea(
+    idea: ContentIdea,
     brand: Brand,
+    content: ContentConfig,
     day: date,
 ) -> Draft:
-    rng = random.Random(f"{day.isoformat()}|{topic.title}")
+    rng = random.Random(f"{day.isoformat()}|{idea.id}")
 
-    hooks = HOOKS.get(product.category.lower(), DEFAULT_HOOKS) if product else DEFAULT_HOOKS
-    hook = rng.choice(hooks)
-    lines = LINES.get(product.category.lower(), DEFAULT_LINES) if product else DEFAULT_LINES
-    line = rng.choice(lines)
-
-    if product:
-        sentence = f"{line} {product.name} from {brand.name}, part of the winter edit."
-        headline = f"The {product.name.lower()}"
-    else:
-        sentence = f"Winter basics from {brand.name}, part of the winter edit."
-        headline = "Winter, layer by layer"
-
-    parts = [hook, sentence]
+    parts = [_ensure_sentence(idea.title), _ensure_sentence(idea.body)]
     if brand.cta_text:
         parts.append(_ensure_sentence(brand.cta_text))
     caption = " ".join(parts).strip()
 
-    if len(caption) < brand.caption.min_chars:
-        caption = f"{caption} {brand.tagline}".strip()
+    if content.follow:
+        with_follow = f"{caption} {_ensure_sentence(content.follow)}".strip()
+        if len(with_follow) <= brand.caption.max_chars:
+            caption = with_follow
+
+    if len(caption) < brand.caption.min_chars and brand.tagline:
+        caption = f"{caption} {_ensure_sentence(brand.tagline)}".strip()
+
     if len(caption) > brand.caption.max_chars:
-        sentence = f"{product.name if product else 'Winter basics'} from {brand.name}."
-        parts = [hook, sentence]
-        if brand.cta_text:
-            parts.append(_ensure_sentence(brand.cta_text))
-        caption = " ".join(parts).strip()
+        caption = " ".join(
+            [
+                _ensure_sentence(idea.title),
+                _ensure_sentence(idea.body),
+                _ensure_sentence(brand.cta_text) if brand.cta_text else "",
+            ]
+        ).strip()
+    if len(caption) > brand.caption.max_chars:
+        caption = caption[: brand.caption.max_chars].rsplit(" ", 1)[0].rstrip(",;:") + "."
 
     return Draft(
-        hook=hook,
+        hook=idea.title,
         caption=caption,
-        hashtags=_hashtags(brand, product, rng),
-        image_headline=headline,
-        image_subline=brand.tagline,
-        product_ids=(product.id,) if product else (),
+        hashtags=_hashtags(brand, idea.audience, rng),
+        image_headline=idea.title,
+        image_subline=idea.note,
+        product_ids=(),
         source="offline",
     )
 
@@ -228,52 +163,44 @@ def _system_prompt(brand: Brand) -> str:
         f"You write short English social captions for {brand.name}, "
         f"{brand.description} Audience: {brand.audience}. "
         f"Tone: {brand.tone}. Location: {brand.location}.\n"
+        "This account shares winter tips, not product ads.\n"
         "Hard rules:\n"
-        "- Use only the product names and categories given by the user. Invent nothing.\n"
-        "- Never mention price, discount, sale, stock level, delivery time, warranty, "
-        "origin, or material composition.\n"
-        "- Never state a news headline as a fact. The topic is only an angle.\n"
-        "- The graphic is text only: never mention people, models, or photos of women.\n"
-        "- No emoji. At most one exclamation mark. Plain, concrete language.\n"
+        "- Use only the idea given by the user. Invent nothing.\n"
+        "- Never sell. No price, discount, stock, delivery, warranty, material or 'buy now'.\n"
+        "- Never mention a product name or push a product.\n"
+        "- One to three short sentences. No emoji. At most one exclamation mark.\n"
         "- Return JSON only, matching the schema. No code fences, no commentary."
     )
 
 
-def _allowed_tags(brand: Brand, product: Product | None) -> list[str]:
+def _allowed_tags(brand: Brand, audience: Sequence[str]) -> list[str]:
+    groups = ["winter", "local", *audience]
     pool: list[str] = []
-    groups = ["winter", "local"]
-    if product:
-        groups.extend(product.audience)
     for group in groups:
         pool.extend(brand.hashtag_pools.get(group.lower(), ()))
     return list(dict.fromkeys(pool))
 
 
-def _user_prompt(topic: Topic, product: Product | None, brand: Brand) -> str:
-    products = []
-    if product:
-        products.append(f"- id={product.id}; name={product.name}; category={product.category}")
-    else:
-        products.append("- (no specific product)")
-
-    tag_pool = ", ".join(_allowed_tags(brand, product)[:30])
+def _user_prompt(idea: ContentIdea, brand: Brand, content: ContentConfig) -> str:
+    tag_pool = ", ".join(_allowed_tags(brand, idea.audience)[:30])
     requirements = (
-        f"caption: {brand.caption.min_chars}-{brand.caption.max_chars} characters, 1-2 sentences.\n"
+        f"caption: {brand.caption.min_chars}-{brand.caption.max_chars} characters, 1-3 sentences.\n"
         f"hashtags: {brand.caption.min_hashtags}-{brand.caption.max_hashtags} tags, each starting with #, "
         f"must include {', '.join(brand.required_hashtags) or 'none'}. "
         f"Prefer tags from this pool: {tag_pool or 'none'}.\n"
-        "image_headline: 2-6 words, no punctuation at the end.\n"
-        "image_subline: under 70 characters.\n"
-        "hook: 3-6 words, the first thing a reader sees."
+        "image_headline: the idea title, or 2-6 words.\n"
+        "image_subline: under 70 characters, a short takeaway.\n"
+        "hook: the idea title."
     )
     return (
-        f"Topic angle: {topic.title}\n"
-        f"Topic source: {topic.source}\n"
-        f"Products you may mention:\n{chr(10).join(products)}\n"
-        f"CTA to use: {brand.cta_text or 'none'}\n"
-        f"Phrases that are forbidden: {', '.join(brand.banned_phrases) or 'none'}\n\n"
+        f"Idea type: {idea.type}\n"
+        f"Idea title: {idea.title}\n"
+        f"Idea body: {idea.body}\n"
+        f"Short takeaway: {idea.note}\n"
+        f"CTA to end with: {brand.cta_text or 'none'}\n"
+        f"Do not use these phrases: {', '.join(brand.banned_phrases) or 'none'}\n\n"
         f"{requirements}\n\n"
-        'Return {"hook","caption","hashtags","image_headline","image_subline","product_ids"}.'
+        'Return {"hook","caption","hashtags","image_headline","image_subline"}.'
     )
 
 
@@ -285,9 +212,8 @@ _SCHEMA = {
         "hashtags": {"type": "array", "items": {"type": "string"}},
         "image_headline": {"type": "string"},
         "image_subline": {"type": "string"},
-        "product_ids": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["hook", "caption", "hashtags", "image_headline", "image_subline", "product_ids"],
+    "required": ["hook", "caption", "hashtags", "image_headline", "image_subline"],
 }
 
 
@@ -312,7 +238,7 @@ def _extract_json(text: str) -> dict[str, Any]:
 def _merge_hashtags(
     model_tags: Sequence[str],
     brand: Brand,
-    product: Product | None,
+    audience: Sequence[str],
     rng: random.Random,
 ) -> tuple[str, ...]:
     limit = brand.caption.max_hashtags
@@ -331,49 +257,54 @@ def _merge_hashtags(
         add(tag)
     for tag in list(model_tags)[:3]:
         add(tag)
-    for tag in _hashtags(brand, product, rng):
+    for tag in _hashtags(brand, audience, rng):
         add(tag)
     for tag in list(model_tags)[3:]:
         add(tag)
     return tuple(ordered[:limit])
 
 
-def _post_process(data: dict[str, Any], topic: Topic, product: Product | None, brand: Brand) -> Draft:
+def _clip(text: str, limit: int) -> str:
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    cut = text[: max(limit - 1, 0)]
+    if " " in cut:
+        cut = cut.rsplit(" ", 1)[0]
+    return (cut.rstrip(",;:") + ".")[:limit]
+
+
+def _post_process(data: dict[str, Any], idea: ContentIdea, brand: Brand) -> Draft:
     caption = str(data.get("caption", "")).strip()
     if not caption:
         raise WriterError("model returned an empty caption")
 
     if len(caption) > brand.caption.max_chars:
-        trimmed = caption[: brand.caption.max_chars]
-        cut = max(trimmed.rfind(". "), trimmed.rfind("! "), trimmed.rfind("? "))
-        caption = trimmed[: cut + 1] if cut > 40 else trimmed.rsplit(" ", 1)[0].rstrip(",;:") + "."
-        LOG.warning("trimmed model caption from %d to %d chars", len(data.get("caption", "")), len(caption))
+        LOG.warning("trimmed model caption from %d to %d chars", len(caption), brand.caption.max_chars)
+        caption = _clip(caption, brand.caption.max_chars)
 
     raw_tags: Sequence[Any] = data.get("hashtags") or []
     model_tags = [str(raw).strip() for raw in raw_tags]
     tags = _merge_hashtags(
         model_tags,
         brand,
-        product,
-        random.Random(f"{caption}|{product.id if product else 'none'}"),
+        idea.audience,
+        random.Random(f"{caption}|{idea.id}"),
     )
 
     headline = str(data.get("image_headline", "")).strip().rstrip(".!?")
-    if not headline:
-        headline = f"The {product.name.lower()}" if product else "Winter, layer by layer"
-    subline = str(data.get("image_subline", "")).strip() or brand.tagline
-
-    product_ids = tuple(str(pid) for pid in (data.get("product_ids") or []) if isinstance(pid, str))
-    if product and product.id not in product_ids:
-        product_ids = (product.id,)
+    if not 2 <= len(headline) <= 60:
+        headline = idea.title
+    subline = str(data.get("image_subline", "")).strip() or idea.note
+    subline = _clip(subline, 90)
 
     return Draft(
-        hook=str(data.get("hook", "")).strip() or headline,
+        hook=str(data.get("hook", "")).strip() or idea.title,
         caption=caption,
         hashtags=tuple(tags),
         image_headline=headline,
         image_subline=subline,
-        product_ids=product_ids,
+        product_ids=(),
         source="gemini",
     )
 
@@ -420,10 +351,9 @@ def _call_gemini(
 
 
 def generate(
-    topic: Topic,
-    product: Product | None,
+    idea: ContentIdea,
     brand: Brand,
-    catalog: Catalog,
+    content: ContentConfig,
     day: date,
     *,
     offline: bool = False,
@@ -437,17 +367,17 @@ def generate(
     log = log or LOG
     if offline:
         log.info("writer: offline mode, using templates")
-        return build_offline(topic, product, brand, day)
+        return build_from_idea(idea, brand, content, day)
     if not api_key:
         log.warning("writer: GEMINI_API_KEY is not set, falling back to templates")
-        return build_offline(topic, product, brand, day)
+        return build_from_idea(idea, brand, content, day)
 
     session = session or requests.Session()
     payload = {
         "systemInstruction": {"parts": [{"text": _system_prompt(brand)}]},
-        "contents": [{"role": "user", "parts": [{"text": _user_prompt(topic, product, brand)}]}],
+        "contents": [{"role": "user", "parts": [{"text": _user_prompt(idea, brand, content)}]}],
         "generationConfig": {
-            "temperature": 0.85,
+            "temperature": 0.7,
             "maxOutputTokens": 512,
             "responseMimeType": "application/json",
             "responseSchema": _SCHEMA,
@@ -457,9 +387,9 @@ def generate(
         raw = _call_gemini(payload, api_key, model, session, base_url, timeout)
     except WriterUnavailable as exc:
         log.warning("writer: Gemini unavailable, using templates: %s", exc)
-        fallback = build_offline(topic, product, brand, day)
+        fallback = build_from_idea(idea, brand, content, day)
         return replace(fallback, source="offline-fallback")
     data = _extract_json(raw)
-    draft = _post_process(data, topic, product, brand)
+    draft = _post_process(data, idea, brand)
     log.info("writer: gemini draft ready (%d chars, %d tags)", len(draft.caption), len(draft.hashtags))
     return draft

@@ -168,8 +168,6 @@ def validate_draft(draft: Draft, brand: Brand, catalog: Catalog) -> list[Issue]:
                 issues.append(
                     Issue("unknown_product", "error", f"draft references unknown product {product_id!r}")
                 )
-    else:
-        issues.append(Issue("no_product", "warning", "draft is not tied to a product"))
 
     return issues
 

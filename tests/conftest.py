@@ -17,15 +17,16 @@ from src.config import (  # noqa: E402
     Product,
     ResearchConfig,
 )
+from src.content import ContentConfig, ContentIdea  # noqa: E402
 
 COLORS = {
-    "primary": "#0B2239",
-    "secondary": "#1F4E6B",
-    "accent": "#CFE6F2",
-    "surface": "#F8FBFD",
-    "ink": "#0B2239",
-    "muted": "#5A7382",
-    "text": "#FFFFFF",
+    "primary": "#594E38",
+    "secondary": "#ADB7B3",
+    "accent": "#E3CAA5",
+    "surface": "#FFFBF9",
+    "ink": "#594E38",
+    "muted": "#7E7363",
+    "text": "#FFFBF9",
 }
 
 
@@ -33,8 +34,8 @@ COLORS = {
 def brand() -> Brand:
     return Brand(
         name="Khuje Nao",
-        tagline="Winter essentials, found for you.",
-        description="An online shop in Bangladesh.",
+        tagline="Winter style notes for Dhaka.",
+        description="An online shop sharing winter notes.",
         audience="Adults in Bangladesh",
         location="Dhaka, Bangladesh",
         language="en",
@@ -43,13 +44,13 @@ def brand() -> Brand:
         verified=False,
         colors=COLORS,
         tone="warm, practical",
-        cta_text="Order via inbox",
+        cta_text="Save this for later",
         cta_url="",
         caption=CaptionRules(80, 320, 5, 10),
         price_policy="never",
         stock_policy="never",
         required_hashtags=("#KhujeNao",),
-        banned_phrases=("discount", "sale", "% off"),
+        banned_phrases=("discount", "sale", "% off", "buy now"),
         notes=(),
         hashtag_pools={
             "local": ("#Dhaka", "#Bangladesh", "#DhakaFashion"),
@@ -124,4 +125,26 @@ def research_config() -> ResearchConfig:
             FallbackTopic("Layering for cool Dhaka mornings", "puffer-jacket"),
             FallbackTopic("Keep the evening chill off", "woven-scarf"),
         ),
+    )
+
+
+@pytest.fixture
+def idea() -> ContentIdea:
+    return ContentIdea(
+        id="layer-light",
+        type="STYLE TIP",
+        title="Layer light for Dhaka winter",
+        body="Start with a tee, add a sweatshirt, finish with a light jacket.",
+        note="Light layers beat one heavy coat here.",
+        audience=("men", "women"),
+        tags=("layering",),
+    )
+
+
+@pytest.fixture
+def content(idea: ContentIdea) -> ContentConfig:
+    return ContentConfig(
+        kicker="WINTER STYLE NOTES",
+        follow="Follow for more winter tips.",
+        ideas=(idea,),
     )

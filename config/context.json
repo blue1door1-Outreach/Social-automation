@@ -63,7 +63,9 @@
       "sculpture", "plate", "lithograph", "print", "diagram", "chart",
       "pattern book", "sample book", "catalog", "catalogue", "album", "journal",
       "certificate", "booklet", "leaflet", "text page", "printed page",
-      "worn by", "costume", "mannequin", "uniform", "military", "ceremonial"
+      "worn by", "costume", "mannequin", "uniform", "military", "ceremonial",
+      "credit card", "debit card", "bank card", "visa", "mastercard", "wallet",
+      "money", "cash", "banknote", "price tag", "price", "discount", "sale"
     ],
     "concept_words": {
       "scarf": ["scarf", "scarves", "muffler", "shawl", "stole", "wool", "knit"],

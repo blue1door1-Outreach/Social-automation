@@ -160,6 +160,7 @@ def _load_artifacts(out_dir: Path) -> tuple[dict[str, Any], Topic, writer.Draft,
         image_subline=str(draft_data.get("image_subline", "")),
         product_ids=tuple(draft_data.get("product_ids", [])),
         source=str(draft_data.get("source", "unknown")),
+        format=str(draft_data.get("format", "short")),
     )
     return post, topic, draft, meta
 
@@ -463,9 +464,17 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 subline=draft.image_subline,
                 kicker=content_config.display_kicker,
                 label=type_label_bn(idea.type) if idea else "",
-                follow=content_config.display_follow,
+                follow=(
+                    content_config.display_follow_story
+                    if draft.format == "story"
+                    else content_config.display_follow
+                ),
                 photo=photo.path if photo else None,
-                cta=brand.cta_text_bn or brand.cta_text,
+                cta=(
+                    "আপনার গল্পটা কমেন্টে লিখুন"
+                    if draft.format == "story"
+                    else (brand.cta_text_bn or brand.cta_text)
+                ),
                 place=brand.location_bn or brand.location.split(",")[0].strip(),
             )
         except graphics.GraphicsError as exc:
@@ -505,6 +514,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 "image_subline": draft.image_subline,
                 "product_ids": list(draft.product_ids),
                 "source": draft.source,
+                "format": draft.format,
             },
             "image": {
                 "file": image_meta.path.name,

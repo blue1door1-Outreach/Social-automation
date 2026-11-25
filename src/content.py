@@ -8,6 +8,7 @@ a reader can save and use. Nothing in here is a price, stock or delivery claim.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -38,6 +39,8 @@ class ContentIdea:
     weather: tuple[str, ...] = ()
     hook_bn: str = ""
     story_bn: str = ""
+    question_bn: str = ""
+    format: str = ""
     emotion_bn: str = ""
 
     @property
@@ -56,6 +59,10 @@ class ContentIdea:
     def is_story(self) -> bool:
         return bool(self.hook_bn or self.story_bn)
 
+    @property
+    def is_long_story(self) -> bool:
+        return self.format == "story" or len(self.story_bn.split()) >= 150
+
 
 @dataclass(frozen=True)
 class ContentConfig:
@@ -64,6 +71,7 @@ class ContentConfig:
     ideas: tuple[ContentIdea, ...]
     kicker_bn: str = ""
     follow_bn: str = ""
+    follow_story_bn: str = ""
 
     def by_id(self, idea_id: str) -> ContentIdea | None:
         for idea in self.ideas:
@@ -79,6 +87,10 @@ class ContentConfig:
     def display_follow(self) -> str:
         return self.follow_bn or self.follow
 
+    @property
+    def display_follow_story(self) -> str:
+        return self.follow_story_bn or self.follow_bn or self.follow
+
 
 TYPE_LABELS_BN = {
     "STYLE TIP": "স্টাইল টিপ",
@@ -89,6 +101,7 @@ TYPE_LABELS_BN = {
     "DHAKA NOTE": "ঢাকার নোট",
     "COLOUR": "রঙের খেলা",
     "COLOUR TIP": "রঙের খেলা",
+    "STORY": "শীতের গল্প",
     "NOTE": "নোট",
 }
 
@@ -123,6 +136,7 @@ def load_content(path: Path) -> ContentConfig:
         raise ContentError(f"{where}: 'kicker' is required")
     kicker_bn = str(data.get("kicker_bn", "")).strip()
     follow_bn = str(data.get("follow_bn", "")).strip()
+    follow_story_bn = str(data.get("follow_story_bn", "")).strip()
 
     raw_ideas = data.get("ideas")
     if not isinstance(raw_ideas, list) or not raw_ideas:
@@ -170,6 +184,26 @@ def load_content(path: Path) -> ContentConfig:
         if not isinstance(audience_raw, list) or not isinstance(tags_raw, list):
             raise ContentError(f"{label}: 'audience' and 'tags' must be lists")
 
+        item_format = str(item.get("format", "")).strip().lower()
+        if item_format == "story":
+            if not item.get("hook_bn") or not item.get("story_bn"):
+                raise ContentError(
+                    f"{label}: a long story needs 'hook_bn' and 'story_bn'"
+                )
+            if not str(item.get("question_bn", "")).strip():
+                raise ContentError(
+                    f"{label}: a long story needs 'question_bn' to invite comments"
+                )
+            paragraphs = [
+                part
+                for part in re.split(r"\n\s*\n", str(item.get("story_bn", "")))
+                if part.strip()
+            ]
+            if not 8 <= len(paragraphs) <= 20:
+                raise ContentError(
+                    f"{label}: a long story needs 8-20 short paragraphs, got {len(paragraphs)}"
+                )
+
         ideas.append(
             ContentIdea(
                 id=idea_id,
@@ -195,12 +229,19 @@ def load_content(path: Path) -> ContentConfig:
                 ),
                 hook_bn=str(item.get("hook_bn", "")).strip(),
                 story_bn=str(item.get("story_bn", "")).strip(),
+                question_bn=str(item.get("question_bn", "")).strip(),
+                format=str(item.get("format", "")).strip().lower(),
                 emotion_bn=str(item.get("emotion_bn", "")).strip(),
             )
         )
 
     return ContentConfig(
-        kicker=kicker, follow=follow, ideas=tuple(ideas), kicker_bn=kicker_bn, follow_bn=follow_bn
+        kicker=kicker,
+        follow=follow,
+        ideas=tuple(ideas),
+        kicker_bn=kicker_bn,
+        follow_bn=follow_bn,
+        follow_story_bn=follow_story_bn,
     )
 
 

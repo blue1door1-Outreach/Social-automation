@@ -27,6 +27,39 @@ def test_offline_draft_passes_validation(
     assert len(draft.caption) <= brand.caption.max_chars
 
 
+def test_curated_long_story_passes_validation(
+    brand: Brand, catalog: Catalog
+) -> None:
+    from pathlib import Path
+
+    from src.content import load_content
+
+    root = Path(__file__).resolve().parent.parent
+    content = load_content(root / "config" / "content.json")
+    idea = content.by_id("folded-sweater-in-wardrobe")
+    assert idea is not None
+    draft = build_from_idea(idea, brand, content, date(2026, 11, 26))
+    issues = validate_draft(draft, brand, catalog)
+    assert errors(issues) == [], [issue.message for issue in issues]
+    assert warnings(issues) == [], [issue.message for issue in issues]
+
+
+def test_story_without_enough_paragraphs_is_rejected(
+    brand: Brand, catalog: Catalog
+) -> None:
+    from pathlib import Path
+
+    from src.content import load_content
+
+    root = Path(__file__).resolve().parent.parent
+    content = load_content(root / "config" / "content.json")
+    idea = content.by_id("folded-sweater-in-wardrobe")
+    assert idea is not None
+    draft = build_from_idea(idea, brand, content, date(2026, 11, 26))
+    flat = replace(draft, caption="\n\n".join(draft.caption.split("\n\n")[:3]))
+    assert "story_paragraphs" in codes(validate_draft(flat, brand, catalog), "error")
+
+
 def test_short_caption_is_rejected(
     brand: Brand, catalog: Catalog, content: ContentConfig, idea: ContentIdea
 ) -> None:

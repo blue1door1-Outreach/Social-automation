@@ -28,6 +28,10 @@
   "caption": {
     "min_chars": 80,
     "max_chars": 620,
+    "story_min_chars": 900,
+    "story_max_chars": 1900,
+    "story_min_words": 180,
+    "story_max_words": 300,
     "min_hashtags": 5,
     "max_hashtags": 10
   },

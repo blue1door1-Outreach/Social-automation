@@ -42,6 +42,43 @@ def test_generate_without_key_falls_back(
     assert draft.source == "offline"
 
 
+def _real_story():
+    from pathlib import Path
+
+    from src.config import load_brand
+    from src.content import load_content
+
+    root = Path(__file__).resolve().parent.parent
+    content = load_content(root / "config" / "content.json")
+    brand = load_brand(root / "config" / "brand.json")
+    idea = content.by_id("folded-sweater-in-wardrobe")
+    assert idea is not None
+    return brand, content, idea
+
+
+def test_long_story_builds_title_paragraphs_and_question() -> None:
+    from src.validator import _bangla_words
+
+    brand, content, idea = _real_story()
+    draft = build_from_idea(idea, brand, content, date(2026, 11, 26))
+
+    assert idea.is_long_story
+    assert draft.format == "story"
+    assert draft.caption.splitlines()[0] == idea.display_title
+    paragraphs = [part for part in draft.caption.split("\n\n") if part.strip()]
+    assert 10 <= len(paragraphs) <= 22
+    assert draft.caption.rstrip().endswith("?")
+    assert 180 <= len(_bangla_words(draft.caption)) <= 300
+    assert brand.cta_text_bn not in draft.caption
+
+
+def test_long_story_skips_the_model() -> None:
+    brand, content, idea = _real_story()
+    draft = generate(idea, brand, content, date(2026, 11, 26), api_key="not-used")
+    assert draft.source == "curated"
+    assert draft.format == "story"
+
+
 def test_extract_json_handles_code_fences() -> None:
     payload = '```json\n{"caption": "hello"}\n```'
     assert _extract_json(payload) == {"caption": "hello"}

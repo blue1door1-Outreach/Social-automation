@@ -88,29 +88,91 @@ def _sentences(text: str) -> list[str]:
     ]
 
 
+def _bangla_words(text: str) -> list[str]:
+    """Count words that carry Bangla script, ignoring hashtags and the tagline."""
+    words = []
+    for token in text.split():
+        if token.startswith("#"):
+            continue
+        if any("\u0980" <= char <= "\u09ff" for char in token):
+            words.append(token)
+    return words
+
+
 def validate_draft(draft: Draft, brand: Brand, catalog: Catalog) -> list[Issue]:
     issues: list[Issue] = []
     caption = draft.caption.strip()
     full_text = draft.full_text()
+    is_story = draft.format == "story"
+
+    min_chars = brand.caption.story_min_chars if is_story else brand.caption.min_chars
+    max_chars = brand.caption.story_max_chars if is_story else brand.caption.max_chars
 
     if not caption:
         issues.append(Issue("caption_empty", "error", "caption is empty"))
-    if len(caption) < brand.caption.min_chars:
+    if len(caption) < min_chars:
         issues.append(
             Issue(
                 "caption_short",
                 "error",
-                f"caption is {len(caption)} chars, below the {brand.caption.min_chars} minimum",
+                f"caption is {len(caption)} chars, below the {min_chars} minimum",
             )
         )
-    if len(caption) > brand.caption.max_chars:
+    if len(caption) > max_chars:
         issues.append(
             Issue(
                 "caption_long",
                 "error",
-                f"caption is {len(caption)} chars, above the {brand.caption.max_chars} maximum",
+                f"caption is {len(caption)} chars, above the {max_chars} maximum",
             )
         )
+
+    if is_story:
+        words = _bangla_words(caption)
+        if len(words) < brand.caption.story_min_words:
+            issues.append(
+                Issue(
+                    "story_short",
+                    "error",
+                    f"story is {len(words)} Bangla words, below the "
+                    f"{brand.caption.story_min_words} minimum",
+                )
+            )
+        if len(words) > brand.caption.story_max_words:
+            issues.append(
+                Issue(
+                    "story_long",
+                    "error",
+                    f"story is {len(words)} Bangla words, above the "
+                    f"{brand.caption.story_max_words} maximum",
+                )
+            )
+        paragraphs = [part for part in re.split(r"\n\s*\n", caption) if part.strip()]
+        if not 10 <= len(paragraphs) <= 22:
+            issues.append(
+                Issue(
+                    "story_paragraphs",
+                    "error",
+                    f"story has {len(paragraphs)} paragraphs, expected 10-22 short ones",
+                )
+            )
+        title = draft.image_headline.strip()
+        if title and not caption.startswith(title):
+            issues.append(
+                Issue(
+                    "story_title",
+                    "error",
+                    "story must open with the title hook as its first line",
+                )
+            )
+        if "?" not in caption.split("\n\n")[-1]:
+            issues.append(
+                Issue(
+                    "story_question",
+                    "error",
+                    "story must end with a question that invites comments",
+                )
+            )
     if utf16_units(full_text) > INSTAGRAM_CAPTION_LIMIT:
         issues.append(
             Issue(
@@ -160,12 +222,13 @@ def validate_draft(draft: Draft, brand: Brand, catalog: Catalog) -> list[Issue]:
     if len(draft.image_subline.strip()) > 90:
         issues.append(Issue("subline_length", "error", "image subline must be at most 90 characters"))
 
-    sentences = _sentences(caption)
-    if len(sentences) != len(set(sentences)):
-        issues.append(Issue("repetition", "error", "caption repeats a sentence"))
+    if not is_story:
+        sentences = _sentences(caption)
+        if len(sentences) != len(set(sentences)):
+            issues.append(Issue("repetition", "error", "caption repeats a sentence"))
 
     ctas = [text for text in (brand.cta_text, brand.cta_text_bn) if text]
-    if ctas and not any(text.lower() in caption.lower() for text in ctas):
+    if not is_story and ctas and not any(text.lower() in caption.lower() for text in ctas):
         issues.append(Issue("cta_missing", "warning", "caption does not include the configured CTA"))
 
     if draft.product_ids:

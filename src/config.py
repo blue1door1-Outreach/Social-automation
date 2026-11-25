@@ -59,6 +59,10 @@ class CaptionRules:
     max_chars: int
     min_hashtags: int
     max_hashtags: int
+    story_min_chars: int = 900
+    story_max_chars: int = 1900
+    story_min_words: int = 180
+    story_max_words: int = 300
 
 
 @dataclass(frozen=True)
@@ -156,11 +160,19 @@ def load_brand(path: Path) -> Brand:
         max_chars=_req(caption_raw, "max_chars", int, f"{where}.caption"),
         min_hashtags=_req(caption_raw, "min_hashtags", int, f"{where}.caption"),
         max_hashtags=_req(caption_raw, "max_hashtags", int, f"{where}.caption"),
+        story_min_chars=int(caption_raw.get("story_min_chars", 900)),
+        story_max_chars=int(caption_raw.get("story_max_chars", 1900)),
+        story_min_words=int(caption_raw.get("story_min_words", 180)),
+        story_max_words=int(caption_raw.get("story_max_words", 300)),
     )
     if not 0 < rules.min_chars <= rules.max_chars:
         raise ConfigError(f"{where}: caption min_chars must be > 0 and <= max_chars")
     if not 0 <= rules.min_hashtags <= rules.max_hashtags:
         raise ConfigError(f"{where}: caption hashtag bounds are invalid")
+    if not 0 < rules.story_min_chars <= rules.story_max_chars:
+        raise ConfigError(f"{where}: caption story_min_chars must be > 0 and <= story_max_chars")
+    if not 0 < rules.story_min_words <= rules.story_max_words:
+        raise ConfigError(f"{where}: caption story_min_words must be > 0 and <= story_max_words")
 
     colors_raw = data.get("colors")
     if not isinstance(colors_raw, dict):

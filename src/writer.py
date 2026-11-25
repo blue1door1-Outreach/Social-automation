@@ -55,6 +55,7 @@ class Draft:
     image_subline: str
     product_ids: tuple[str, ...]
     source: str
+    format: str = "short"
 
     def full_text(self) -> str:
         if not self.hashtags:
@@ -138,6 +139,26 @@ def _situation_lines(situation: Any) -> str:
     return "\n".join(lines)
 
 
+def _paragraphs(text: str) -> list[str]:
+    """Split a curated story on blank lines, keeping short Facebook paragraphs."""
+    return [part.strip() for part in re.split(r"\n\s*\n", text.strip()) if part.strip()]
+
+
+def _story_caption(idea: ContentIdea, cta: str) -> str:
+    """Title hook, then one short paragraph per beat, then the closing question."""
+    title = _ensure_sentence(idea.display_title)
+    body: list[str] = []
+    if idea.hook_bn:
+        body.append(idea.hook_bn)
+    body.extend(_paragraphs(idea.story_bn or idea.display_body))
+    paragraphs = [title] + [_ensure_sentence(part) for part in body if part.strip()]
+    if idea.question_bn:
+        paragraphs.append(_ensure_sentence(idea.question_bn))
+    elif cta:
+        paragraphs.append(_ensure_sentence(cta))
+    return "\n\n".join(paragraphs).strip()
+
+
 def build_from_idea(
     idea: ContentIdea,
     brand: Brand,
@@ -153,34 +174,55 @@ def build_from_idea(
     cta = brand.cta_text_bn or brand.cta_text
     follow = content.display_follow
 
-    if idea.is_story:
-        head = idea.hook_bn or title
-        story = idea.story_bn or body
-        parts = [_ensure_sentence(head), _ensure_sentence(story), _ensure_sentence(note)]
+    if idea.is_long_story:
+        caption = _story_caption(idea, cta)
+    elif idea.is_story:
+        parts = [
+            _ensure_sentence(title),
+            _ensure_sentence(idea.hook_bn or body),
+            _ensure_sentence(idea.story_bn or body),
+        ]
+        if idea.question_bn:
+            parts.append(_ensure_sentence(idea.question_bn))
+        else:
+            parts.append(_ensure_sentence(note))
+            if cta:
+                parts.append(_ensure_sentence(cta))
+        caption = "\n\n".join(part for part in parts if part).strip()
     else:
         parts = [_ensure_sentence(title), _ensure_sentence(body)]
-    if cta:
-        parts.append(_ensure_sentence(cta))
-    caption = " ".join(part for part in parts if part).strip()
+        if cta:
+            parts.append(_ensure_sentence(cta))
+        caption = " ".join(part for part in parts if part).strip()
 
-    if follow:
+    if not idea.is_long_story and follow:
         with_follow = f"{caption} {_ensure_sentence(follow)}".strip()
-        if len(with_follow) <= brand.caption.max_chars:
+        limit = brand.caption.story_max_chars if idea.is_story else brand.caption.max_chars
+        if len(with_follow) <= limit:
             caption = with_follow
 
     if len(caption) < brand.caption.min_chars and brand.tagline:
         caption = f"{caption} {_ensure_sentence(brand.tagline)}".strip()
 
-    if len(caption) > brand.caption.max_chars:
-        caption = " ".join(
-            [
-                _ensure_sentence(idea.hook_bn or title),
-                _ensure_sentence(idea.story_bn or body),
-                _ensure_sentence(cta) if cta else "",
-            ]
-        ).strip()
-    if len(caption) > brand.caption.max_chars:
-        caption = _clip(caption, brand.caption.max_chars)
+    limit = (
+        brand.caption.story_max_chars if idea.is_story else brand.caption.max_chars
+    )
+    if len(caption) > limit:
+        if idea.is_long_story:
+            # Never silently cut a story: the validator should fail loudly instead.
+            LOG.warning(
+                "story caption is %d chars, above the %d limit", len(caption), limit
+            )
+        else:
+            caption = " ".join(
+                [
+                    _ensure_sentence(idea.hook_bn or title),
+                    _ensure_sentence(idea.story_bn or body),
+                    _ensure_sentence(cta) if cta else "",
+                ]
+            ).strip()
+            if len(caption) > limit:
+                caption = _clip(caption, limit)
 
     return Draft(
         hook=idea.hook_bn or title,
@@ -190,6 +232,7 @@ def build_from_idea(
         image_subline=note,
         product_ids=(),
         source="offline",
+        format="story" if idea.is_long_story else "short",
     )
 
 
@@ -338,9 +381,10 @@ def _post_process(data: dict[str, Any], idea: ContentIdea, brand: Brand) -> Draf
     if not caption:
         raise WriterError("model returned an empty caption")
 
-    if len(caption) > brand.caption.max_chars:
-        LOG.warning("trimmed model caption from %d to %d chars", len(caption), brand.caption.max_chars)
-        caption = _clip(caption, brand.caption.max_chars)
+    limit = brand.caption.story_max_chars if idea.is_story else brand.caption.max_chars
+    if len(caption) > limit:
+        LOG.warning("trimmed model caption from %d to %d chars", len(caption), limit)
+        caption = _clip(caption, limit)
 
     raw_tags: Sequence[Any] = data.get("hashtags") or []
     model_tags = [str(raw).strip() for raw in raw_tags]
@@ -365,6 +409,7 @@ def _post_process(data: dict[str, Any], idea: ContentIdea, brand: Brand) -> Draf
         image_subline=subline,
         product_ids=(),
         source="gemini",
+        format="story" if idea.is_long_story else "short",
     )
 
 
@@ -425,6 +470,13 @@ def generate(
     situation: Any = None,
 ) -> Draft:
     log = log or LOG
+    if idea.is_long_story:
+        # A curated long story is the post. Gemini only rewrites short notes, so
+        # the 7-step story the page is built on is never flattened or cut.
+        log.info("writer: curated story, skipping the model")
+        return replace(
+            build_from_idea(idea, brand, content, day, situation), source="curated"
+        )
     if offline:
         log.info("writer: offline mode, using templates")
         return build_from_idea(idea, brand, content, day, situation)

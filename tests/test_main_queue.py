@@ -29,7 +29,7 @@ class FakeBuffer:
         return [dict(row) for row in self.channel_rows]
 
     def create_update(
-        self, channel_id, text, image_url, mode="addToQueue", due_at=None
+        self, channel_id, text, image_url, mode="addToQueue", due_at=None, service=""
     ):
         type(self).calls.append(channel_id)
         if type(self).fail_channel == channel_id:
@@ -263,7 +263,7 @@ def test_unknown_outcome_blocks_retry(
 
     class UncertainBuffer(FakeBuffer):
         def create_update(
-            self, channel_id, text, image_url, mode="addToQueue", due_at=None
+            self, channel_id, text, image_url, mode="addToQueue", due_at=None, service=""
         ):
             type(self).calls.append(channel_id)
             raise BufferUncertain("timed out")

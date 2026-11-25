@@ -225,7 +225,7 @@ def _publish(
         channel_id = env[CHANNEL_ENV[target]]
         try:
             payload = client.create_update(
-                channel_id, text, image_url=image_url, due_at=due_at, mode=mode
+                channel_id, text, image_url=image_url, due_at=due_at, mode=mode, service=target
             )
         except BufferUncertain as exc:
             results[target] = {"status": "unknown", "detail": str(exc)}

@@ -132,6 +132,7 @@ class BufferClient:
         image_url: str,
         mode: str = "addToQueue",
         due_at: str | None = None,
+        service: str = "",
     ) -> dict[str, Any]:
         if mode not in ALLOWED_MODES:
             raise BufferError(f"unsupported Buffer mode {mode!r}")
@@ -140,6 +141,11 @@ class BufferClient:
 
         effective_mode = "customScheduled" if due_at else mode
         due_clause = f"dueAt: {json.dumps(due_at)}" if due_at else ""
+        metadata = ""
+        if service == "facebook":
+            metadata = "metadata: { facebook: { type: post } }"
+        elif service == "instagram":
+            metadata = "metadata: { instagram: { type: post, shouldShareToFeed: true } }"
         query = f"""
 mutation CreatePost {{
   createPost(input: {{
@@ -148,6 +154,7 @@ mutation CreatePost {{
     schedulingType: automatic
     mode: {effective_mode}
     {due_clause}
+    {metadata}
     assets: [{{ image: {{ url: {json.dumps(image_url)} }} }}]
   }}) {{
     ... on PostActionSuccess {{ post {{ id dueAt }} }}

@@ -306,6 +306,42 @@ def _recent(ledger: Ledger, day: date, days: int) -> tuple[list[str], list[str]]
     return ideas, photos
 
 
+def _local_history(out_root: Path, day: date, days: int) -> tuple[list[str], list[str]]:
+    """Idea/photo ids from earlier local previews, so review runs do not repeat.
+
+    The ledger only knows about published posts. While reviewing a week offline
+    or online, consecutive preview folders are the de-facto history.
+    """
+    if days <= 0 or not out_root.is_dir():
+        return [], []
+    floor = day.toordinal() - days
+    ideas: list[str] = []
+    photos: list[str] = []
+    for folder in sorted(out_root.iterdir()):
+        if not folder.is_dir():
+            continue
+        try:
+            ordinal = date.fromisoformat(folder.name).toordinal()
+        except ValueError:
+            continue
+        if ordinal < floor or ordinal >= day.toordinal():
+            continue
+        payload = folder / "post.json"
+        if not payload.is_file():
+            continue
+        try:
+            post = json.loads(payload.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        idea = post.get("idea") or {}
+        if idea.get("id"):
+            ideas.append(str(idea["id"]))
+        photo = post.get("photo") or {}
+        if photo.get("id"):
+            photos.append(str(photo["id"]))
+    return ideas, photos
+
+
 def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     brand, catalog, _ = load_all(ROOT / args.config)
     content_config = load_content(ROOT / args.config / "content.json")
@@ -347,6 +383,15 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
         )
         warnings.extend(situation.errors)
         used_ideas, used_photos = _recent(Ledger(ROOT / args.ledger), day, recency_days)
+        local_ideas, local_photos = _local_history(out_dir.parent, day, recency_days)
+        used_ideas = list(
+            dict.fromkeys(
+                used_ideas
+                + local_ideas
+                + idea_mod.recent_ideas(content_config, situation, recency_days)
+            )
+        )
+        used_photos = list(dict.fromkeys(used_photos + local_photos))
         chosen = idea_mod.choose(content_config, situation, used=used_ideas, log=LOG)
         idea = chosen.idea
         if not args.offline:

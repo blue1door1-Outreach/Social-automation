@@ -49,7 +49,7 @@
   "photos": {
     "min_edge": 1000,
     "min_short_edge": 560,
-    "max_downloads": 12,
+    "max_downloads": 16,
     "chips": ["#FFFBF9", "#E3CAA5", "#ADB7B3", "#594E38"],
     "people_words": [
       "people", "person", "man", "men", "woman", "women", "girl", "boy",
@@ -60,35 +60,38 @@
       "poster", "lobby card", "illustration", "drawing", "painting", "engraving",
       "etching", "sketch", "cartoon", "caricature", "stamp", "coin", "banknote",
       "map", "manuscript", "newspaper", "magazine", "advertisement", "logo",
-      "sculpture", "plate", "lithograph", "print", "diagram", "chart"
+      "sculpture", "plate", "lithograph", "print", "diagram", "chart",
+      "pattern book", "sample book", "catalog", "catalogue", "album", "journal",
+      "certificate", "booklet", "leaflet", "text page", "printed page",
+      "worn by", "costume", "mannequin", "uniform", "military", "ceremonial"
     ],
     "concept_words": {
       "scarf": ["scarf", "scarves", "muffler", "shawl", "stole", "wool", "knit"],
       "knit": ["sweater", "sweaters", "jumper", "pullover", "cardigan", "knit", "knitted", "wool", "knitwear"],
       "jacket": ["jacket", "coat", "coats", "parka", "padded", "quilted", "outerwear", "anorak"],
-      "denim": ["denim", "jeans", "jean", "jacket", "shirt", "fabric", "textile", "corduroy"],
+      "denim": ["denim", "jeans", "jean", "corduroy", "denim jacket", "denim shirt"],
       "hoodie": ["hoodie", "hoodies", "sweatshirt", "hood", "jumper", "sweater"],
-      "kids": ["hat", "beanie", "bonnet", "mitten", "mittens", "glove", "gloves", "booties", "knit", "wool", "cardigan"],
+      "kids": ["hat", "beanie", "bonnet", "mitten", "mittens", "glove", "gloves", "booties", "bootee", "socks", "sock", "scarf", "cardigan", "jumper"],
       "footwear": ["sock", "socks", "boot", "boots", "shoe", "shoes", "slipper", "slippers", "footwear", "wool"],
-      "wardrobe": ["folded", "clothes", "clothing", "wardrobe", "closet", "hanger", "hangers", "storage", "stack", "drawers", "shelf"],
+      "wardrobe": ["sweater", "sweaters", "jumper", "cardigan", "knitwear", "folded", "wardrobe", "closet", "hanger", "hangers", "storage", "drawers", "shelf"],
       "care": ["yarn", "wool", "knit", "knitted", "laundry", "washing", "fabric", "texture", "thread", "ball"],
-      "colour": ["plaid", "tartan", "check", "checks", "textile", "fabric", "blanket", "pattern", "wool", "tweed"],
+      "colour": ["plaid", "tartan", "check", "checks", "blanket", "wool", "tweed", "knit", "knitted", "camel", "beige"],
       "weather": ["fog", "mist", "misty", "rain", "rainy", "morning", "sky", "tree", "trees", "window", "street", "road", "city", "field"],
       "comfort": ["tea", "cup", "mug", "blanket", "wool", "warm", "coffee", "drink", "kettle", "lantern"]
     },
     "queries": {
-      "scarf": ["wool scarf still life", "knitted scarf folded", "muffler knit texture"],
-      "knit": ["folded sweater stack", "knitted cardigan close up", "wool sweater flat lay"],
-      "jacket": ["padded jacket hanging", "winter coat on hanger", "quilted jacket detail"],
-      "denim": ["denim jacket flat lay", "denim fabric close up", "denim shirt folded"],
-      "hoodie": ["hoodie flat lay", "sweatshirt folded fabric", "grey hoodie texture"],
-      "kids": ["knitted baby hat", "knitted mittens wool", "small winter clothes flat lay"],
-      "footwear": ["wool socks knitted", "winter boots pair", "knitted slippers wool"],
-      "wardrobe": ["folded clothes stack", "wooden hangers clothes rail", "clothes storage basket"],
-      "care": ["wool yarn ball", "knitted fabric texture macro", "laundry wool care"],
-      "colour": ["plaid woollen fabric", "camel beige knit textile", "tartan pattern cloth"],
-      "weather": ["foggy morning street", "misty winter morning trees", "rain drops window"],
-      "comfort": ["cup of tea warm", "hot drink on wooden table", "wool blanket texture"]
+      "scarf": ["wool scarf still life", "knitted scarf folded", "muffler knit texture", "wool shawl folded"],
+      "knit": ["folded sweater stack", "knitted cardigan close up", "wool sweater flat lay", "jumper knitted wool texture", "knitwear pile wool"],
+      "jacket": ["padded jacket hanging", "winter coat on hanger", "quilted jacket detail", "coat on wooden hanger"],
+      "denim": ["blue denim jeans folded", "denim jacket detail", "denim fabric texture", "denim jeans stack"],
+      "hoodie": ["hoodie flat lay", "sweatshirt folded fabric", "grey hoodie texture", "sweatshirt on hanger"],
+      "kids": ["knitted baby hat", "knitted mittens wool", "small winter clothes flat lay", "children knitted gloves pair"],
+      "footwear": ["wool socks knitted", "winter boots pair", "knitted slippers wool", "boots on wooden floor"],
+      "wardrobe": ["pile of knitted sweaters", "folded sweaters stack", "sweaters on shelf", "wooden hangers knitwear", "drawer folded knitwear"],
+      "care": ["wool yarn ball", "knitted fabric texture macro", "laundry wool care", "ball of wool thread"],
+      "colour": ["beige wool blanket texture", "plaid wool blanket", "camel knitted wool texture", "tartan wool scarf fabric"],
+      "weather": ["foggy morning street", "misty winter morning trees", "rain drops window", "foggy field dawn"],
+      "comfort": ["cup of tea warm", "hot drink on wooden table", "wool blanket texture", "teapot and cup"]
     }
   }
 }

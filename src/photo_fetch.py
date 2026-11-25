@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import io
 import logging
+import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -127,19 +128,25 @@ def _entry_text(entry: Mapping[str, Any]) -> str:
     return " ".join(bits).lower()
 
 
+def _has_word(text: str, word: str) -> bool:
+    """Whole-word match so 'shirt' does not match 't-shirts' and 'man' not 'woman'."""
+    return re.search(rf"(?<![a-z]){re.escape(word)}(?![a-z])", text) is not None
+
+
 def _looks_like_people(text: str, people_words: Sequence[str]) -> bool:
-    return any(word in text for word in people_words)
+    return any(_has_word(text, word) for word in people_words)
 
 
 def _looks_like_artefact(text: str, words: Sequence[str]) -> bool:
-    return any(word in text for word in words)
+    return any(_has_word(text, word) for word in words)
 
 
-def _matches_concept(text: str, concept: str, words: Mapping[str, Sequence[str]]) -> bool:
+def _matches_concept(text: str, concept: str, words: Mapping[str, Sequence[str]]) -> int:
+    """How many concept words the entry's own metadata mentions."""
     expected = [str(word).lower() for word in words.get(concept) or ()]
     if not expected:
-        return True
-    return any(word in text for word in expected)
+        return 1
+    return sum(1 for word in expected if _has_word(text, word))
 
 
 def _candidate_urls(entry: Mapping[str, Any]) -> list[str]:
@@ -168,12 +175,11 @@ def fetch(
     session = session or requests.Session()
     session.headers.setdefault("User-Agent", USER_AGENT)
 
-    concept_queries = list(queries.get(concept) or queries.get("comfort") or [])
-    if not concept_queries:
-        return None
-    # Rotate which query runs first so the same concept yields variety over time.
-    shift = day.toordinal() % len(concept_queries)
-    ordered = concept_queries[shift:] + concept_queries[:shift]
+    concept_order = [concept]
+    for extra in cfg.get("fallback_concepts") or ():
+        extra = str(extra).strip().lower()
+        if extra and extra != concept and extra not in concept_order and queries.get(extra):
+            concept_order.append(extra)
 
     min_edge = int(cfg.get("min_edge", 1000))
     min_short_edge = int(cfg.get("min_short_edge", 560))
@@ -187,61 +193,73 @@ def fetch(
     candidates: list[tuple[float, float, dict[str, Any], Image.Image]] = []
     downloaded = 0
     reviewed = 0
-    max_reviewed = max(max_downloads * 2, 16)
+    max_reviewed = max(max_downloads * 3, 24)
 
-    for query in ordered:
-        try:
-            response = session.get(
-                SEARCH_URL,
-                params={"q": query, "license": LICENSE, "page_size": 10, "mature": "false"},
-                timeout=timeout,
-            )
-            response.raise_for_status()
-            results = response.json().get("results") or []
-        except (requests.RequestException, ValueError) as exc:
-            log.info("photo search failed for %r: %s", query, exc)
+    for active in concept_order:
+        concept_queries = list(queries.get(active) or [])
+        if not concept_queries:
             continue
+        # Rotate which query runs first so the same concept yields variety over time.
+        shift = day.toordinal() % len(concept_queries)
+        ordered = concept_queries[shift:] + concept_queries[:shift]
 
-        for entry in results:
-            if downloaded >= max_downloads or reviewed >= max_reviewed:
-                break
-            text = _entry_text(entry)
-            if not text.strip():
-                continue
-            if _looks_like_people(text, people_words):
-                continue
-            if _looks_like_artefact(text, artefact_words):
-                continue
-            if not _matches_concept(text, concept, concept_words):
-                log.info("photo skipped (off-concept): %s", entry.get("title"))
-                continue
-            photo_id = str(entry.get("id") or "").strip()
-            if photo_id and photo_id in used_set:
+        for query in ordered:
+            try:
+                response = session.get(
+                    SEARCH_URL,
+                    params={"q": query, "license": LICENSE, "page_size": 10, "mature": "false"},
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+                results = response.json().get("results") or []
+            except (requests.RequestException, ValueError) as exc:
+                log.info("photo search failed for %r: %s", query, exc)
                 continue
 
-            blob = None
-            reviewed += 1
-            for url in _candidate_urls(entry):
-                try:
-                    asset = session.get(url, timeout=timeout)
-                    asset.raise_for_status()
-                    blob = asset.content
+            for entry in results:
+                if downloaded >= max_downloads or reviewed >= max_reviewed:
                     break
-                except requests.RequestException:
+                text = _entry_text(entry)
+                if not text.strip():
                     continue
-            if not blob:
-                continue
-            downloaded += 1
+                if _looks_like_people(text, people_words):
+                    continue
+                if _looks_like_artefact(text, artefact_words):
+                    continue
+                hits = _matches_concept(text, active, concept_words)
+                if hits == 0:
+                    log.info("photo skipped (off-concept): %s", entry.get("title"))
+                    continue
+                photo_id = str(entry.get("id") or "").strip()
+                if photo_id and photo_id in used_set:
+                    continue
 
-            image, distance, detail, reason = inspect(
-                blob, min_edge=min_edge, chips=chips, min_short_edge=min_short_edge
-            )
-            if image is None:
-                log.info("photo rejected (%s): %s", reason, entry.get("title"))
-                continue
-            score = detail + max(0.0, 120.0 - distance) / 6.0
-            candidates.append((score, distance, entry, image))
+                blob = None
+                reviewed += 1
+                for url in _candidate_urls(entry):
+                    try:
+                        asset = session.get(url, timeout=timeout)
+                        asset.raise_for_status()
+                        blob = asset.content
+                        break
+                    except requests.RequestException:
+                        continue
+                if not blob:
+                    continue
+                downloaded += 1
+
+                image, distance, detail, reason = inspect(
+                    blob, min_edge=min_edge, chips=chips, min_short_edge=min_short_edge
+                )
+                if image is None:
+                    log.info("photo rejected (%s): %s", reason, entry.get("title"))
+                    continue
+                score = detail + max(0.0, 120.0 - distance) / 6.0 + 4.0 * hits
+                candidates.append((score, distance, entry, image))
+            if candidates:
+                break
         if candidates:
+            concept = active
             break
 
     if not candidates:
@@ -249,7 +267,7 @@ def fetch(
         return None
 
     candidates.sort(key=lambda item: item[0], reverse=True)
-    top = candidates[: max(1, min(3, len(candidates)))]
+    top = candidates[: max(1, min(5, len(candidates)))]
     score, distance, entry, image = top[day.toordinal() % len(top)]
 
     dest_dir.mkdir(parents=True, exist_ok=True)

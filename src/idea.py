@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -181,6 +181,7 @@ def choose(
     *,
     used: Sequence[str] = (),
     log: logging.Logger | None = None,
+    quiet: bool = False,
 ) -> Chosen:
     log = log or LOG
     used_set = set(used)
@@ -204,5 +205,26 @@ def choose(
 
     concept = idea.concept or "comfort"
     reason = f"{situation.brief()} -> {idea.id} [{concept}] score {score} ({', '.join(why) or 'rotation'})"
-    log.info("idea: %s", reason)
+    if not quiet:
+        log.info("idea: %s", reason)
     return Chosen(idea=idea, concept=concept, score=score, reason=reason, story=bool(idea.hook_bn))
+
+
+def recent_ideas(
+    content: ContentConfig,
+    situation: Situation,
+    days: int,
+) -> list[str]:
+    """Ideas the same rules would have picked on the previous ``days`` days.
+
+    This keeps consecutive posts from repeating an idea when no ledger history
+    exists yet (for example a run of local previews). The weather is reused as a
+    stand-in for the past, which is close enough for a de-duplication nudge.
+    """
+    from dataclasses import replace
+
+    picked: list[str] = []
+    for offset in range(1, max(days, 0) + 1):
+        past = replace(situation, day=situation.day - timedelta(days=offset))
+        picked.append(choose(content, past, quiet=True).idea.id)
+    return picked

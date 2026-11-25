@@ -142,11 +142,20 @@ jobs:
         run: |
           image_url="https://raw.githubusercontent.com/${{ github.repository }}/main/docs/posts/${{ steps.meta.outputs.post_id }}.png"
           echo "public image: $image_url"
+          set +e
           python -m src.main --mode queue \
             --date "${{ steps.meta.outputs.date }}" \
             --out out \
             --image-url "$image_url" \
             --due-local "$STORY_LOCAL_TIME"
+          code=$?
+          if [ "$code" -ne 0 ]; then
+            if grep -q "Status:\*\* SKIPPED" "out/${{ steps.meta.outputs.date }}/report.md"; then
+              echo "Already posted for ${{ steps.meta.outputs.date }}; nothing to do."
+              exit 0
+            fi
+            exit "$code"
+          fi
 
       - name: Commit the ledger and history
         if: always() && steps.gate.outputs.enabled == 'true'

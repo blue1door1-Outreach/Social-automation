@@ -87,7 +87,14 @@ def _audience_pool(brand: Brand, audience: Sequence[str]) -> list[str]:
     return list(dict.fromkeys(pool))
 
 
-def _hashtags(brand: Brand, audience: Sequence[str], rng: random.Random) -> tuple[str, ...]:
+def _hashtags(
+    brand: Brand,
+    audience: Sequence[str],
+    rng: random.Random,
+    *,
+    story: bool = False,
+    extra: Sequence[str] = (),
+) -> tuple[str, ...]:
     limit = brand.caption.max_hashtags
     chosen: list[str] = []
 
@@ -102,23 +109,34 @@ def _hashtags(brand: Brand, audience: Sequence[str], rng: random.Random) -> tupl
 
     for tag in brand.required_hashtags:
         add(tag)
+    for tag in extra:
+        add(tag)
 
     audience_pool = _audience_pool(brand, audience)
     winter = list(brand.hashtag_pools.get("winter", ()))
     local = list(brand.hashtag_pools.get("local", ()))
+    story_pool = list(brand.hashtag_pools.get("story", ()))
 
     plan: list[tuple[list[str], int]] = []
-    if audience_pool:
-        plan.append((audience_pool, 2))
-    plan.append((winter, 4))
-    plan.append((local, 2))
+    if story:
+        # A story is not a product post. Lead with the story and local tags so
+        # the tags fit families, students and everyday readers, and keep the
+        # generic fashion pools as filler only.
+        plan.append((story_pool, 5))
+        plan.append((local, 2))
+        plan.append((winter, 2))
+    else:
+        if audience_pool:
+            plan.append((audience_pool, 2))
+        plan.append((winter, 4))
+        plan.append((local, 2))
 
     for pool, quota in plan:
         rng.shuffle(pool)
         for tag in pool[:quota]:
             add(tag)
 
-    filler = audience_pool + winter + local
+    filler = story_pool + audience_pool + winter + local
     rng.shuffle(filler)
     for tag in filler:
         add(tag)
@@ -227,7 +245,13 @@ def build_from_idea(
     return Draft(
         hook=idea.hook_bn or title,
         caption=caption,
-        hashtags=_hashtags(brand, idea.audience, rng),
+        hashtags=_hashtags(
+            brand,
+            idea.audience,
+            rng,
+            story=idea.is_long_story,
+            extra=idea.hashtags,
+        ),
         image_headline=title,
         image_subline=note,
         product_ids=(),

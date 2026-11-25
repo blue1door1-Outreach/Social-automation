@@ -23,13 +23,23 @@ import os
 import re
 import sys
 import uuid
-from datetime import date, datetime, timezone
+from dataclasses import replace
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
 import requests
 
-from . import graphics, idea as idea_mod, photo_fetch, report, research, validator, writer
+from . import (
+    graphics,
+    idea as idea_mod,
+    photo_fetch,
+    report,
+    research,
+    story_engine,
+    validator,
+    writer,
+)
 from .buffer_client import BufferClient, BufferError, BufferUncertain, verify_channels
 from .config import Brand, ConfigError, load_all
 from .content import ContentIdea, load_content, type_label_bn
@@ -58,9 +68,25 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--ledger", default="state/ledger.jsonl")
     parser.add_argument("--image-url", default=None, help="public URL of the reviewed image")
     parser.add_argument("--idea", default=None, help="force a content idea id (manual override)")
+    parser.add_argument(
+        "--story",
+        action="store_true",
+        help="write today's long-form story from config/story_topics.json",
+    )
+    parser.add_argument(
+        "--due-local",
+        default=None,
+        help="schedule in Buffer at this Asia/Dhaka time, e.g. 09:00",
+    )
     parser.add_argument("--now", action="store_true", help="publish immediately with Buffer shareNow")
     parser.add_argument("--offline", action="store_true", help="use templates instead of Gemini")
     parser.add_argument("--timeout", type=int, default=20)
+    parser.add_argument(
+        "--story-timeout",
+        type=int,
+        default=90,
+        help="seconds to wait for one long-story model call (default: 90)",
+    )
     return parser.parse_args(argv)
 
 
@@ -84,6 +110,21 @@ def _resolve_day(args: argparse.Namespace, brand: Brand) -> date:
         except ValueError as exc:
             raise MainError(f"--date must be YYYY-MM-DD, got {args.date!r}") from exc
     return datetime.now(timezone.utc).astimezone(brand.tz).date()
+
+
+def _due_at_from_local(day: date, hhmm: str, brand: Brand) -> str:
+    """Schedule the post at a local morning time, on ``day`` or the next one."""
+    try:
+        hour, minute = (int(part) for part in hhmm.split(":", 1))
+    except (ValueError, TypeError) as exc:
+        raise MainError(f"--due-local must be HH:MM, got {hhmm!r}") from exc
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        raise MainError(f"--due-local must be a real clock time, got {hhmm!r}")
+    local = datetime.combine(day, time(hour, minute), tzinfo=brand.tz)
+    now = datetime.now(brand.tz)
+    if local <= now:
+        local += timedelta(days=1)
+    return _iso(local)
 
 
 def _fetch_public(url: str) -> tuple[str, bytes]:
@@ -371,6 +412,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     draft: writer.Draft | None = None
     image_meta: graphics.ImageMeta | None = None
     image_url = ""
+    story_result: story_engine.StoryResult | None = None
 
     session = requests.Session()
     session.headers["User-Agent"] = research.USER_AGENT
@@ -408,6 +450,41 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 story=match.is_story,
             )
             LOG.info("idea: manual override -> %s [%s]", match.id, chosen.concept)
+        elif args.story:
+            story_result = story_engine.build_daily_story(
+                topics_path=ROOT / "config" / "story_topics.json",
+                fallback_path=ROOT / "config" / "story_fallbacks.json",
+                history_path=ROOT / "state" / "story_history.json",
+                day=day,
+                brand=brand,
+                content_stories=content_config.ideas,
+                season=situation.season,
+                weather_tags=situation.weather_tags,
+                offline=args.offline,
+                api_key=env.get("GEMINI_API_KEY", ""),
+                model=env.get("GEMINI_MODEL", writer.DEFAULT_MODEL),
+                models=(
+                    env.get("GEMINI_MODEL", writer.DEFAULT_MODEL),
+                    "gemini-3.5-flash",
+                    "gemini-flash-latest",
+                ),
+                session=session,
+                timeout=args.story_timeout,
+                log=LOG,
+            )
+            chosen = idea_mod.Chosen(
+                idea=story_result.idea,
+                concept=story_result.idea.concept or "comfort",
+                score=0,
+                reason=story_result.reason,
+                story=True,
+            )
+            LOG.info(
+                "idea: daily story -> %s [%s] (%s)",
+                story_result.topic_id,
+                chosen.concept,
+                story_result.source,
+            )
         else:
             chosen = idea_mod.choose(content_config, situation, used=used_ideas, log=LOG)
         idea = chosen.idea
@@ -428,7 +505,11 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
         topic = Topic(
             title=idea.title,
             link="",
-            source=f"idea:{idea.id}",
+            source=(
+                f"story:{story_result.topic_id}"
+                if story_result is not None
+                else f"idea:{idea.id}"
+            ),
             score=chosen.score,
             product_id=None,
             is_fallback=True,
@@ -447,6 +528,8 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             )
         except writer.WriterError as exc:
             errors.append(f"writer: {exc}")
+        if draft is not None and story_result is not None:
+            draft = replace(draft, source=story_result.source)
         if draft is not None and draft.source == "offline-fallback":
             warnings.append("writer: Gemini unavailable, used offline templates")
 
@@ -538,11 +621,24 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
         (out_dir / "post.json").write_text(
             json.dumps(post, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
+        if story_result is not None:
+            story_engine.record(
+                ROOT / "state" / "story_history.json", story_result, day
+            )
+            LOG.info("story: recorded %s for %s", story_result.topic_id, day)
 
     targets: dict[str, dict[str, Any]] = {"facebook": {"status": "not_attempted"}, "instagram": {"status": "not_attempted"}}
     ledger = Ledger(ROOT / args.ledger)
 
     if args.mode == "queue" and post is not None and not errors and not gates:
+        due_at = (env.get("BUFFER_DUE_AT") or "").strip() or None
+        if args.now:
+            due_at = None
+            env["BUFFER_DUE_AT"] = ""
+        elif args.due_local:
+            due_at = _due_at_from_local(day, args.due_local, brand)
+            env["BUFFER_DUE_AT"] = due_at
+            LOG.info("buffer: scheduling for %s (%s Dhaka)", due_at, args.due_local)
         gates.extend(_gate_problems(env, brand, image_url))
 
         if not gates:

@@ -42,6 +42,7 @@ class ContentIdea:
     question_bn: str = ""
     format: str = ""
     emotion_bn: str = ""
+    hashtags: tuple[str, ...] = ()
 
     @property
     def display_title(self) -> str:
@@ -181,8 +182,11 @@ def load_content(path: Path) -> ContentConfig:
 
         audience_raw = item.get("audience") or []
         tags_raw = item.get("tags") or []
+        hashtags_raw = item.get("hashtags") or []
         if not isinstance(audience_raw, list) or not isinstance(tags_raw, list):
             raise ContentError(f"{label}: 'audience' and 'tags' must be lists")
+        if not isinstance(hashtags_raw, list):
+            raise ContentError(f"{label}: 'hashtags' must be a list")
 
         item_format = str(item.get("format", "")).strip().lower()
         if item_format == "story":
@@ -232,6 +236,11 @@ def load_content(path: Path) -> ContentConfig:
                 question_bn=str(item.get("question_bn", "")).strip(),
                 format=str(item.get("format", "")).strip().lower(),
                 emotion_bn=str(item.get("emotion_bn", "")).strip(),
+                hashtags=tuple(
+                    str(value).strip()
+                    for value in hashtags_raw
+                    if str(value).strip()
+                ),
             )
         )
 

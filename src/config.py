@@ -89,6 +89,7 @@ class Brand:
     hashtag_pools: dict[str, tuple[str, ...]]
     cta_text_bn: str = ""
     location_bn: str = ""
+    story_banned_phrases: tuple[str, ...] = ()
 
     @property
     def tz(self) -> ZoneInfo:
@@ -241,6 +242,7 @@ def load_brand(path: Path) -> Brand:
         hashtag_pools=hashtag_pools,
         cta_text_bn=str(cta.get("bn", "")).strip(),
         location_bn=str(data.get("location_bn", "")).strip(),
+        story_banned_phrases=_str_list(data, "story_banned_phrases", where),
     )
 
 

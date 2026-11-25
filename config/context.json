@@ -79,7 +79,9 @@
       "care": ["yarn", "wool", "knit", "knitted", "laundry", "washing", "fabric", "texture", "thread", "ball"],
       "colour": ["plaid", "tartan", "check", "checks", "blanket", "wool", "tweed", "knit", "knitted", "camel", "beige"],
       "weather": ["fog", "mist", "misty", "rain", "rainy", "morning", "sky", "tree", "trees", "window", "street", "road", "city", "field"],
-      "comfort": ["tea", "cup", "mug", "blanket", "wool", "warm", "coffee", "drink", "kettle", "lantern"]
+      "comfort": ["tea", "cup", "mug", "blanket", "wool", "warm", "coffee", "drink", "kettle", "lantern"],
+      "nature": ["plant", "leaf", "leaves", "green", "garden", "tree", "flower", "window", "sunlight", "branch"],
+      "books": ["book", "books", "notebook", "paper", "desk", "lamp", "study", "library", "reading", "pages"]
     },
     "queries": {
       "scarf": ["wool scarf still life", "knitted scarf folded", "muffler knit texture", "wool shawl folded"],
@@ -93,7 +95,9 @@
       "care": ["wool yarn ball", "knitted fabric texture macro", "laundry wool care", "ball of wool thread"],
       "colour": ["beige wool blanket texture", "plaid wool blanket", "camel knitted wool texture", "tartan wool scarf fabric"],
       "weather": ["foggy morning street", "misty winter morning trees", "rain drops window", "foggy field dawn"],
-      "comfort": ["cup of tea warm", "hot drink on wooden table", "wool blanket texture", "teapot and cup"]
+      "comfort": ["cup of tea warm", "hot drink on wooden table", "wool blanket texture", "teapot and cup"],
+      "nature": ["green plant by window", "single leaf in sunlight", "potted plant close up", "garden leaves morning"],
+      "books": ["open book on wooden table", "stack of old books", "notebook and pen on desk", "book with cup of tea"]
     }
   }
 }

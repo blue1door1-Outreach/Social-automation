@@ -86,6 +86,51 @@
       "#WomensWinterWear",
       "#WomensOutfit",
       "#WomensWinterStyle"
+    ],
+    "story": [
+      "#BanglaStory",
+      "#WinterStory",
+      "#DhakaDiaries",
+      "#EverydayBangladesh",
+      "#Bangladesh",
+      "#FamilyStory",
+      "#Kindness",
+      "#Nostalgia",
+      "#DeshiLife",
+      "#WinterMornings",
+      "#StoryOfTheDay",
+      "#BangladeshiLife"
+    ],
+    "students": [
+      "#StudentLife",
+      "#CollegeLife",
+      "#UniversityLife",
+      "#CampusDiaries",
+      "#SchoolDays"
+    ],
+    "family": [
+      "#FamilyStory",
+      "#BangladeshFamily",
+      "#EverydayBangladesh",
+      "#FamilyLove"
+    ],
+    "kindness": [
+      "#Kindness",
+      "#EverydayKindness",
+      "#HumanKindness",
+      "#GoodDeeds"
+    ],
+    "nature": [
+      "#WinterNature",
+      "#SimpleBeauty",
+      "#SlowLiving",
+      "#QuietMoments"
+    ],
+    "lifestyle": [
+      "#WinterStyle",
+      "#EverydayStyle",
+      "#SimpleLiving",
+      "#ComfortWear"
     ]
   },
   "price_policy": "never",
@@ -126,6 +171,15 @@
     "লিমিটেড স্টক",
     "শেষ হচ্ছে",
     "এখনই কিনুন"
+  ],
+  "story_banned_phrases": [
+    "রাজনীতি", "নির্বাচন", "ভোট", "সরকার", "মিছিল", "হরতাল",
+    "ধর্ম", "মসজিদ", "মন্দির", "নামাজ", "রোজা", "পূজা", "উৎসব",
+    "গান", "গায়ক", "সঙ্গীত", "কনসার্ট", "সিনেমা", "ছবি মুক্তি", "অভিনেতা", "অভিনেত্রী",
+    "মৃত্যু", "মারা গেল", "মারা যায়", "নিহত", "দুর্ঘটনা", "সুইসাইড", "আত্মহত্যা",
+    "সাইক্লোন", "বন্যা", "ভূমিকম্প", "আগুন", "অগ্নিকাণ্ড", "ডেঙ্গু", "করোনা", "মহামারি",
+    "মদ", "বিয়ার", "মদ খান", "জুয়া", "লটারি", "ডেটিং", "প্রেমিকা", "প্রেমিক",
+    "পরীক্ষার ফল", "রেজাল্ট", "চাকরির পরীক্ষা", "বেতন", "মূল্যবৃদ্ধি"
   ],
   "notes": [
     "This account posts winter tips and styling ideas, not product ads.",

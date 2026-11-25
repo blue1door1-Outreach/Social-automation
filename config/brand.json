@@ -9,7 +9,7 @@
   "secondary_language": "en",
   "timezone": "Asia/Dhaka",
   "publish_time_local": "10:00",
-  "verified": false,
+  "verified": true,
   "colors": {
     "primary": "#594E38",
     "secondary": "#ADB7B3",

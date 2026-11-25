@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 def test_real_config_loads() -> None:
     brand, catalog, research = load_all(ROOT / "config")
     assert brand.name
-    assert brand.verified is False
+    assert brand.verified is True
     assert catalog.verified is False
     assert brand.hashtag_pools["winter"]
     assert brand.required_hashtags

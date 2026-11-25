@@ -57,6 +57,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", default="config", help="config directory (default: config)")
     parser.add_argument("--ledger", default="state/ledger.jsonl")
     parser.add_argument("--image-url", default=None, help="public URL of the reviewed image")
+    parser.add_argument("--idea", default=None, help="force a content idea id (manual override)")
+    parser.add_argument("--now", action="store_true", help="publish immediately with Buffer shareNow")
     parser.add_argument("--offline", action="store_true", help="use templates instead of Gemini")
     parser.add_argument("--timeout", type=int, default=20)
     return parser.parse_args(argv)
@@ -216,13 +218,14 @@ def _publish(
     text: str,
     image_url: str,
     due_at: str | None = None,
+    mode: str = "addToQueue",
 ) -> dict[str, dict[str, Any]]:
     results: dict[str, dict[str, Any]] = {}
     for target in targets:
         channel_id = env[CHANNEL_ENV[target]]
         try:
             payload = client.create_update(
-                channel_id, text, image_url=image_url, due_at=due_at
+                channel_id, text, image_url=image_url, due_at=due_at, mode=mode
             )
         except BufferUncertain as exc:
             results[target] = {"status": "unknown", "detail": str(exc)}
@@ -392,7 +395,20 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             )
         )
         used_photos = list(dict.fromkeys(used_photos + local_photos))
-        chosen = idea_mod.choose(content_config, situation, used=used_ideas, log=LOG)
+        if args.idea:
+            match = next((item for item in content_config.ideas if item.id == args.idea), None)
+            if match is None:
+                raise MainError(f"unknown idea id: {args.idea}")
+            chosen = idea_mod.Chosen(
+                idea=match,
+                concept=match.concept or "comfort",
+                score=0,
+                reason=f"manual override: {match.id}",
+                story=match.is_story,
+            )
+            LOG.info("idea: manual override -> %s [%s]", match.id, chosen.concept)
+        else:
+            chosen = idea_mod.choose(content_config, situation, used=used_ideas, log=LOG)
         idea = chosen.idea
         if not args.offline:
             photo = photo_fetch.fetch(
@@ -567,6 +583,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                             draft.full_text(),
                             image_url,
                             due_at=due_at,
+                            mode="shareNow" if args.now else "addToQueue",
                         )
                         previous = next(
                             (record for record in records if record.get("post_id") == post_id), None

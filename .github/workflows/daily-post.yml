@@ -35,7 +35,7 @@ jobs:
       BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
       BUFFER_ORGANIZATION_ID: ${{ vars.BUFFER_ORGANIZATION_ID }}
       BUFFER_CHANNEL_FB: ${{ vars.BUFFER_CHANNEL_FB }}
-      BUFFER_CHANNEL_IG: ${{ vars.BUFFER_CHANNEL_IG }}
+      BUFFER_CHANNELS: ${{ vars.BUFFER_CHANNELS || 'facebook' }}
       ENABLE_QUEUEING: ${{ vars.ENABLE_QUEUEING }}
       STORY_LOCAL_TIME: ${{ vars.STORY_LOCAL_TIME || '09:00' }}
       AUTOMATION_ENABLED: ${{ vars.AUTOMATION_ENABLED || 'true' }}

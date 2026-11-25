@@ -52,7 +52,21 @@ from .topic_filter import Topic
 LOG = logging.getLogger("khuje.main")
 ROOT = Path(__file__).resolve().parent.parent
 CHANNEL_ENV = {"facebook": "BUFFER_CHANNEL_FB", "instagram": "BUFFER_CHANNEL_IG"}
+DEFAULT_TARGETS: tuple[str, ...] = ("facebook",)
 ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _targets(env: dict[str, str]) -> tuple[str, ...]:
+    """Which networks to publish to. Facebook only unless told otherwise."""
+    raw = (env.get("BUFFER_CHANNELS") or "").strip()
+    if not raw:
+        return DEFAULT_TARGETS
+    wanted = []
+    for name in raw.split(","):
+        name = name.strip().lower()
+        if name and name in CHANNEL_ENV and name not in wanted:
+            wanted.append(name)
+    return tuple(wanted) or DEFAULT_TARGETS
 
 
 class MainError(RuntimeError):
@@ -210,7 +224,12 @@ def _buffer_key(env: dict[str, str]) -> str:
     return (env.get("BUFFER_API_KEY") or env.get("BUFFER_ACCESS_TOKEN") or "").strip()
 
 
-def _gate_problems(env: dict[str, str], brand: Brand, image_url: str) -> list[str]:
+def _gate_problems(
+    env: dict[str, str],
+    brand: Brand,
+    image_url: str,
+    targets: Sequence[str] = DEFAULT_TARGETS,
+) -> list[str]:
     problems: list[str] = []
     if not _truthy(env.get("ENABLE_QUEUEING")):
         problems.append("ENABLE_QUEUEING is not true; queueing is disabled")
@@ -228,7 +247,8 @@ def _gate_problems(env: dict[str, str], brand: Brand, image_url: str) -> list[st
             "it must be the id alone, with no extra text"
         )
 
-    for target, variable in CHANNEL_ENV.items():
+    for target in targets:
+        variable = CHANNEL_ENV[target]
         channel_id = (env.get(variable) or "").strip()
         if not channel_id:
             problems.append(f"{variable} is not set ({target} channel id)")
@@ -393,6 +413,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
     context_cfg = idea_mod.load_context(ROOT / args.config / "context.json")
     recency_days = int(context_cfg.get("recency_days", 14))
     day = _resolve_day(args, brand)
+    target_list = _targets(env)
     out_dir = (ROOT / args.out / day.isoformat()).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -614,7 +635,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 else None
             ),
             "image_url": image_url,
-            "targets": {"facebook": {"status": "not_attempted"}, "instagram": {"status": "not_attempted"}},
+            "targets": {target: {"status": "not_attempted"} for target in target_list},
         }
 
         (out_dir / "caption.txt").write_text(draft.full_text().strip() + "\n", encoding="utf-8")
@@ -627,7 +648,9 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             )
             LOG.info("story: recorded %s for %s", story_result.topic_id, day)
 
-    targets: dict[str, dict[str, Any]] = {"facebook": {"status": "not_attempted"}, "instagram": {"status": "not_attempted"}}
+    targets: dict[str, dict[str, Any]] = {
+        target: {"status": "not_attempted"} for target in target_list
+    }
     ledger = Ledger(ROOT / args.ledger)
 
     if args.mode == "queue" and post is not None and not errors and not gates:
@@ -639,7 +662,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             due_at = _due_at_from_local(day, args.due_local, brand)
             env["BUFFER_DUE_AT"] = due_at
             LOG.info("buffer: scheduling for %s (%s Dhaka)", due_at, args.due_local)
-        gates.extend(_gate_problems(env, brand, image_url))
+        gates.extend(_gate_problems(env, brand, image_url, target_list))
 
         if not gates:
             url_issues = validator.check_public_image(image_url, image_meta.sha256, _fetch_public)
@@ -653,7 +676,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
             except BufferError as exc:
                 errors.append(f"buffer: {exc}")
             else:
-                expected = {target: env[CHANNEL_ENV[target]] for target in CHANNEL_ENV}
+                expected = {target: env[CHANNEL_ENV[target]] for target in target_list}
                 gates.extend(verify_channels(channels, expected))
 
         if client is not None and not gates and not errors:
@@ -662,7 +685,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                 if ledger.corrupt_lines():
                     errors.append("ledger contains corrupt lines; fix state/ledger.jsonl before queueing")
                 else:
-                    decision = decide(records, post_id, day.isoformat())
+                    decision = decide(records, post_id, day.isoformat(), target_list)
                     decision_text = decision.reason
                     LOG.info("duplicate check: %s (%s)", decision.action, decision.reason)
                     if decision.action == "skip":
@@ -695,8 +718,7 @@ def run(args: argparse.Namespace, env: dict[str, str]) -> int:
                             (record for record in records if record.get("post_id") == post_id), None
                         )
                         merged = dict(previous.get("targets", {})) if previous else {
-                            "facebook": {"status": "not_attempted"},
-                            "instagram": {"status": "not_attempted"},
+                            target: {"status": "not_attempted"} for target in target_list
                         }
                         merged.update(results)
                         targets = merged

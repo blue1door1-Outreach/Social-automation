@@ -56,6 +56,7 @@ def queue_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BUFFER_ORGANIZATION_ID", "org1")
     monkeypatch.setenv("BUFFER_CHANNEL_FB", "fb1")
     monkeypatch.setenv("BUFFER_CHANNEL_IG", "ig1")
+    monkeypatch.setenv("BUFFER_CHANNELS", "facebook,instagram")
     monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
@@ -96,8 +97,18 @@ def _queue_env(due_at: str = "") -> dict[str, str]:
         "BUFFER_ORGANIZATION_ID": "org",
         "BUFFER_CHANNEL_FB": "fb",
         "BUFFER_CHANNEL_IG": "ig",
+        "BUFFER_CHANNELS": "facebook,instagram",
         "BUFFER_DUE_AT": due_at,
     }
+
+
+def test_targets_default_to_facebook_only() -> None:
+    assert main_module._targets({}) == ("facebook",)
+    assert main_module._targets({"BUFFER_CHANNELS": "facebook"}) == ("facebook",)
+    assert main_module._targets({"BUFFER_CHANNELS": "facebook,instagram"}) == (
+        "facebook",
+        "instagram",
+    )
 
 
 def _verified_brand():
